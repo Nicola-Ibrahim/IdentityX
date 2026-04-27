@@ -9,7 +9,6 @@ from ..messaging.email_notifier import ConsoleNotificationService
 from ..persistence.repositories.sql_account_repo import SQLAccountRepository
 from ..persistence.repositories.sql_role_repo import SQLRoleRepository
 from ..persistence.repositories.sql_session_repo import SQLSessionRepository
-from ..persistence.repositories.sql_token_denylist_repo import SQLTokenDenylistRepository
 
 
 class AccountsDIContainer(containers.DeclarativeContainer):
@@ -48,10 +47,6 @@ class AccountsDIContainer(containers.DeclarativeContainer):
         SQLRoleRepository,
         session_factory=_session_factory,
     )
-    _token_denylist_repository = providers.Singleton(
-        SQLTokenDenylistRepository,
-        session_factory=_session_factory,
-    )
 
     # -- Application Services (Exposed) --
     account_service = providers.Factory(
@@ -66,7 +61,6 @@ class AccountsDIContainer(containers.DeclarativeContainer):
         session_repository=_session_repository,
         password_hasher=_password_hasher,
         token_factory=_token_factory,
-        token_denylist=_token_denylist_repository,
     )
 
     access_control_service = providers.Factory(

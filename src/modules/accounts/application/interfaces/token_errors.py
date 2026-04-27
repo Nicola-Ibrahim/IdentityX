@@ -9,7 +9,7 @@ class TokenExpiredError(TokenError):
 
 
 class TokenRevokedError(TokenError):
-    """Raised when a token has been revoked (denylisted)."""
+    """Raised when a token has been revoked."""
     pass
 
 

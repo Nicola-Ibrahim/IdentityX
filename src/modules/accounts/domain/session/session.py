@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from pydantic import Field
 
@@ -36,6 +36,14 @@ class Session(AggregateRoot[SessionId]):
     def is_active(self) -> bool:
         return self._status.is_active
 
+    @property
+    def is_revoked(self) -> bool:
+        return self._is_revoked
+
+    def is_expired(self) -> bool:
+        """Check if the session has naturally expired based on time."""
+        return datetime.now(timezone.utc) >= self._expires_at
+
     @classmethod
     def issue(
         cls,
@@ -55,6 +63,7 @@ class Session(AggregateRoot[SessionId]):
     def revoke(self) -> None:
         if self._status.is_active:
             self._status = self._status.revoke()
+            self._is_revoked = True
 
     def expire(self) -> None:
         if self._status.is_active:
