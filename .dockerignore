@@ -1,0 +1,45 @@
+# --- Version Control & IDEs ---
+.git
+.gitignore
+.vscode
+.idea
+.vs
+*.swp
+
+# --- Python & uv Junk ---
+**/__pycache__
+**/.venv
+.venv
+.venv/
+venv/
+env/
+**/.pytest_cache
+**/.ruff_cache
+**/.uv
+uv.cache/
+*.pyc
+*.pyo
+*.egg-info/
+htmlcov/
+coverage.xml
+.coverage
+
+# --- Secrets (CRITICAL) ---
+.env*
+**/secrets.*
+**/values.*.yaml
+
+# --- Other Project Bloat ---
+**/node_modules
+**/bin
+**/obj
+**/docker-compose*
+**/Dockerfile*
+
+# --- Documentation ---
+docs/
+
+# --- Artifacts ---
+LICENSE
+README.md
+*.md
