@@ -1,7 +1,3 @@
-"""Messaging adapter that simulates sending account emails."""
-
-from __future__ import annotations
-
 from ...application.interfaces import INotificationService
 
 

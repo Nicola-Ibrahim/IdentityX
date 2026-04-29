@@ -35,7 +35,6 @@ class ApiSettings(BaseSettings):
     CORS_ALLOW_METHODS: list[str] = ["*"]
     CORS_ALLOW_HEADERS: list[str] = ["*"]
 
-
     # Logging defaults (overridable per environment)
     LOGGER_NAME: str = "identityx"
     LOG_LEVEL: str = "INFO"

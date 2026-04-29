@@ -33,7 +33,7 @@ class AccountService:
 
             hashed = HashedPassword.create(self._password_hasher.encode(password_vo.value))
 
-            account = Account.register(email=email_vo, hashed_password=hashed)
+            account = Account.register(email=email_vo, password=hashed)
 
             await self.uow.accounts.add(account)
             await self.uow.commit()

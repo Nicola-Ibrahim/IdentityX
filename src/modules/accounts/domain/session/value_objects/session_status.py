@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Self
 
-from src.building_blocks.domain.value_object import ValueObject
+from ......building_blocks.domain.value_object import ValueObject
 
 
 @dataclass(slots=True)
@@ -9,6 +9,10 @@ class SessionStatus(ValueObject):
     """Value object describing the lifecycle of a session."""
 
     is_active: bool = True
+
+    @classmethod
+    def create(cls, is_active: bool) -> Self:
+        return cls(is_active)
 
     @classmethod
     def active(cls) -> Self:

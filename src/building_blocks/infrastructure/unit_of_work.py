@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from contextlib import AbstractAsyncContextManager, AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from typing import Dict, Type, TypeVar
 
 TRepository = TypeVar("TRepository")
-
-
 
 
 class AsyncUnitOfWork(AbstractAsyncContextManager["AsyncUnitOfWork"]):

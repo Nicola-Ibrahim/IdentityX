@@ -1,11 +1,11 @@
 import uuid
-from typing import Iterable, Optional
+from typing import Iterable
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .....accounts.domain.account.value_objects.account_id import AccountId
-from .....accounts.domain.interfaces.session_repository import SessionRepository
+from .....accounts.domain.interfaces.session_repository import BaseSessionRepository
 from .....accounts.domain.session.session import Session
 from .....accounts.domain.session.value_objects.refresh_token import RefreshToken
 from .....accounts.domain.session.value_objects.session_id import SessionId
@@ -13,7 +13,7 @@ from .....accounts.domain.session.value_objects.session_status import SessionSta
 from ..orm.models import AccountModel, SessionModel
 
 
-class SQLSessionRepository(SessionRepository):
+class SQLBaseSessionRepository(BaseSessionRepository):
     """SQLAlchemy repository for session aggregates."""
 
     def __init__(self, session: AsyncSession) -> None:
@@ -21,20 +21,21 @@ class SQLSessionRepository(SessionRepository):
 
     def _to_domain(self, record: SessionModel) -> Session:
         account_uuid = record.account.uuid
-        account_id = AccountId(uuid.UUID(account_uuid))
-        session_id = SessionId(uuid.UUID(record.session_uuid))
+        account_id = AccountId.create(uuid.UUID(account_uuid))
+        session_id = SessionId.create(uuid.UUID(record.session_uuid))
         refresh = RefreshToken.create(record.refresh_token)
-        status = SessionStatus(is_active=record.is_active)
-        session = Session(
-            _id=session_id,
-            _account_id=account_id,
-            _refresh_token=refresh,
-            _expires_at=record.expires_at,
-            _status=status,
+        status = SessionStatus.create(is_active=record.is_active)
+
+        return Session.from_data(
+            id=session_id,
+            account_id=account_id,
+            refresh_token=refresh,
+            expires_at=record.expires_at,
+            status=status,
+            is_revoked=not record.is_active,
+            created_at=record.created_at,
+            updated_at=record.updated_at,
         )
-        session._created_at = record.created_at
-        session._updated_at = record.updated_at
-        return session
 
     async def add(self, session_domain: Session) -> None:
         result = await self._session.execute(
@@ -61,37 +62,30 @@ class SQLSessionRepository(SessionRepository):
         record.expires_at = session_domain.expires_at
         record.is_active = session_domain.is_active
 
-    async def get_by_id(self, session_id: SessionId) -> Optional[Session]:
+    async def get_by_id(self, session_id: SessionId) -> Session | None:
         result = await self._session.execute(
-            select(SessionModel)
-            .join(SessionModel.account)
-            .filter(SessionModel.session_uuid == str(session_id.value))
+            select(SessionModel).join(SessionModel.account).filter(SessionModel.session_uuid == str(session_id.value))
         )
         record = result.scalars().one_or_none()
         return self._to_domain(record) if record else None
 
-    async def get_by_refresh_token(self, token: RefreshToken) -> Optional[Session]:
+    async def get_by_refresh_token(self, token: RefreshToken) -> Session | None:
         result = await self._session.execute(
-            select(SessionModel)
-            .join(SessionModel.account)
-            .filter(SessionModel.refresh_token == token.value)
+            select(SessionModel).join(SessionModel.account).filter(SessionModel.refresh_token == token.value)
         )
         record = result.scalars().one_or_none()
         return self._to_domain(record) if record else None
 
     async def list_for_account(self, account_id: AccountId) -> Iterable[Session]:
         result = await self._session.execute(
-            select(SessionModel)
-            .join(SessionModel.account)
-            .filter(AccountModel.uuid == str(account_id.value))
+            select(SessionModel).join(SessionModel.account).filter(AccountModel.uuid == str(account_id.value))
         )
         records = result.scalars().all()
         return [self._to_domain(record) for record in records]
 
     async def revoke_all_for_account(self, account_id: AccountId) -> None:
-        # We need the account.id (integer) to filter sessions
         account_id_subquery = select(AccountModel.id).filter(AccountModel.uuid == str(account_id.value))
-        
+
         stmt = (
             update(SessionModel)
             .where(SessionModel.account_id.in_(account_id_subquery))

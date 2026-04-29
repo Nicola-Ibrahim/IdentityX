@@ -1,4 +1,4 @@
-from .account_repository import AccountRepository
-from .session_repository import SessionRepository
+from .account_repository import BaseAccountRepository
+from .session_repository import BaseSessionRepository
 
-__all__ = ["AccountRepository", "SessionRepository"]
+__all__ = ["BaseAccountRepository", "BaseSessionRepository"]

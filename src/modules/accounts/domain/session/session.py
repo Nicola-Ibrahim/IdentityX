@@ -60,6 +60,33 @@ class Session(AggregateRoot[SessionId]):
             _expires_at=expires_at,
         )
 
+    @classmethod
+    def from_data(
+        cls,
+        id: SessionId,
+        account_id: AccountId,
+        refresh_token: RefreshToken,
+        expires_at: datetime,
+        status: SessionStatus,
+        is_revoked: bool,
+        created_at: datetime | None = None,
+        updated_at: datetime | None = None,
+    ) -> "Session":
+        """Reconstitute a session from existing data."""
+        session = cls(
+            _id=id,
+            _account_id=account_id,
+            _refresh_token=refresh_token,
+            _expires_at=expires_at,
+            _status=status,
+            _is_revoked=is_revoked,
+        )
+        if created_at:
+            session._created_at = created_at
+        if updated_at:
+            session._updated_at = updated_at
+        return session
+
     def revoke(self) -> None:
         if self._status.is_active:
             self._status = self._status.revoke()

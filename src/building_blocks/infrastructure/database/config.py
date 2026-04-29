@@ -25,7 +25,5 @@ class SQLAlchemySettings(BaseSettings):
     @classmethod
     def validate_url(cls, v: str) -> str:
         if not v.startswith("postgresql+psycopg://"):
-            raise ValueError(
-                "SQLAlchemy URL must start with 'postgresql+psycopg://' for asynchronous operations."
-            )
+            raise ValueError("SQLAlchemy URL must start with 'postgresql+psycopg://' for asynchronous operations.")
         return v

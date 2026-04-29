@@ -11,7 +11,7 @@ from ..session.value_objects.refresh_token import RefreshToken
 from ..session.value_objects.session_id import SessionId
 
 
-class SessionRepository(ABC):
+class BaseSessionRepository(ABC):
     @abstractmethod
     async def add(self, session: Session) -> None:
         """Persist a newly issued session."""

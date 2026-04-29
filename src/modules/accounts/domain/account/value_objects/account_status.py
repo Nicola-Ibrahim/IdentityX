@@ -10,7 +10,7 @@ class AccountStatus(ValueObject):
     is_active: bool = True
 
     @classmethod
-    def create(cls, *, is_verified: bool = False, is_active: bool = True) -> Self:
+    def create(cls, is_verified: bool = False, is_active: bool = True) -> Self:
         return cls(is_verified=is_verified, is_active=is_active)
 
     def mark_verified(self) -> Self:

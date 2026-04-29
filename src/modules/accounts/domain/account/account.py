@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Iterable
 
 from pydantic import Field
@@ -46,9 +47,43 @@ class Account(AggregateRoot[AccountId]):
     # Behaviour
     # ------------------------------------------------------------------
     @classmethod
-    def register(cls, email: Email, hashed_password: HashedPassword) -> "Account":
-        account = cls(_id=AccountId.create(), _email=email, _password=hashed_password)
-        return account
+    def register(
+        cls,
+        email: Email,
+        password: HashedPassword,
+        roles: set[AccountRole] | None = None,
+    ) -> "Account":
+        """Factory method to register a new account aggregate."""
+        return cls(
+            _id=AccountId.create(),
+            _email=email,
+            _password=password,
+            _roles=roles or {AccountRole.USER},
+            _created_at=datetime.now(timezone.utc),
+            _updated_at=datetime.now(timezone.utc),
+        )
+
+    @classmethod
+    def from_data(
+        cls,
+        id: AccountId,
+        email: Email,
+        password: HashedPassword,
+        status: AccountStatus,
+        roles: set[AccountRole],
+        created_at: datetime,
+        updated_at: datetime,
+    ) -> "Account":
+        """Reconstitute an account from existing data (e.g. from persistence)."""
+        return cls(
+            _id=id,
+            _email=email,
+            _password=password,
+            _status=status,
+            _roles=roles,
+            _created_at=created_at,
+            _updated_at=updated_at,
+        )
 
     def verify(self) -> None:
         if not self._status.is_verified:

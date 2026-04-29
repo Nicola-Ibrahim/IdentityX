@@ -1,6 +1,4 @@
-"""Repository implementations backed by SQLAlchemy."""
+from .sql_account_repo import SQLBaseAccountRepository
+from .sql_session_repo import SQLBaseSessionRepository
 
-from .sql_account_repo import SQLAccountRepository
-from .sql_session_repo import SQLSessionRepository
-
-__all__ = ["SQLAccountRepository", "SQLSessionRepository"]
+__all__ = ["SQLBaseAccountRepository", "SQLBaseSessionRepository"]

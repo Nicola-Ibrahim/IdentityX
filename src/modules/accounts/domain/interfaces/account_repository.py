@@ -5,7 +5,7 @@ from ..account.account import Account
 from ..account.value_objects.account_id import AccountId
 
 
-class AccountRepository(ABC):
+class BaseAccountRepository(ABC):
     @abstractmethod
     async def add(self, account: Account) -> None:
         """Persist a newly created account aggregate."""

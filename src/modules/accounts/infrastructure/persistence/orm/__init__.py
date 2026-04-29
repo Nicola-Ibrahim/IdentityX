@@ -1,7 +1,6 @@
-from .models import AccountModel, CredentialModel, SessionModel
+from .models import AccountModel, SessionModel
 
 __all__ = [
     "AccountModel",
-    "CredentialModel",
     "SessionModel",
 ]

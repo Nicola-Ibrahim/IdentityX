@@ -34,26 +34,12 @@ class AccountModel(BaseSQLModel):  # type: ignore[misc]
 
     uuid = Column(String(36), unique=True, nullable=False, index=True)
     email = Column(String(320), unique=True, nullable=False, index=True)
+    hashed_password = Column(String(512), nullable=False)
     is_verified = Column(Boolean, nullable=False, default=False)
     is_active = Column(Boolean, nullable=False, default=True)
 
-    credential = relationship(
-        "CredentialModel",
-        back_populates="account",
-        uselist=False,
-        cascade="all, delete-orphan",
-    )
     sessions = relationship("SessionModel", back_populates="account", cascade="all, delete-orphan")
     roles = Column(String(256), nullable=False, default="user")
-
-
-class CredentialModel(BaseSQLModel):  # type: ignore[misc]
-    __tablename__ = "account_credentials"
-
-    account_id = Column(ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False, unique=True)
-    hashed_password = Column(String(512), nullable=False)
-
-    account = relationship("AccountModel", back_populates="credential")
 
 
 class SessionModel(BaseSQLModel):  # type: ignore[misc]
