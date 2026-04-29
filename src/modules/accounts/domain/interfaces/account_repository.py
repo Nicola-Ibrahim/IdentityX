@@ -3,7 +3,6 @@ from typing import Iterable, Optional
 
 from ..account.account import Account
 from ..account.value_objects.account_id import AccountId
-from ..role.value_objects.role_id import RoleId
 
 
 class AccountRepository(ABC):
@@ -35,6 +34,3 @@ class AccountRepository(ABC):
     def remove(self, account_id: AccountId) -> None:
         """Delete the account from persistence."""
 
-    @abstractmethod
-    def assign_role(self, account_id: AccountId, role_id: RoleId) -> None:
-        """Associate a role with the account."""

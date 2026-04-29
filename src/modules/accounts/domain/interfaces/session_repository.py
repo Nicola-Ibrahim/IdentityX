@@ -7,6 +7,7 @@ from typing import Iterable, Optional
 
 from ..account.value_objects.account_id import AccountId
 from ..session.session import Session
+from ..session.value_objects.refresh_token import RefreshToken
 from ..session.value_objects.session_id import SessionId
 
 
@@ -22,6 +23,10 @@ class SessionRepository(ABC):
     @abstractmethod
     def get_by_id(self, session_id: SessionId) -> Optional[Session]:
         """Return a session by its identifier."""
+
+    @abstractmethod
+    def get_by_refresh_token(self, token: RefreshToken) -> Optional[Session]:
+        """Return a session by its refresh token value."""
 
     @abstractmethod
     def list_for_account(self, account_id: AccountId) -> Iterable[Session]:

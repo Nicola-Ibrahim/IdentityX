@@ -4,14 +4,14 @@ from typing import Any
 
 import jwt
 
-from ...application.interfaces.jwt import JWTClaims, TokenFactory
+from ...application.interfaces.jwt import TokenPayload, TokenService, ValidatedClaims
 from ...application.interfaces.token_errors import (
     TokenExpiredError,
     TokenInvalidError,
 )
 
 
-class JWTTokenFactory(TokenFactory):
+class JWTTokenService(TokenService):
     def __init__(
         self,
         private_key: str,
@@ -28,40 +28,50 @@ class JWTTokenFactory(TokenFactory):
         self._access_token_ttl = timedelta(minutes=access_token_ttl_minutes)
         self._refresh_token_ttl = timedelta(days=refresh_token_ttl_days)
 
-    def create_tokens(self, claims: dict[str, Any]) -> tuple[str, str]:
+    def create_tokens(self, claims: TokenPayload) -> tuple[str, str]:
         now = datetime.now(timezone.utc)
+        base_claims = claims.model_dump(exclude_none=True)
 
-        # Access Token
-        access_payload = {
-            **claims,
+        access_token = self._create_access_token(base_claims, now)
+        refresh_token = self._create_refresh_token(claims.sub, now)
+
+        return access_token, refresh_token
+
+    def _create_access_token(self, base_claims: dict[str, Any], now: datetime) -> str:
+        payload = {
+            **base_claims,
             "iat": now,
             "exp": now + self._access_token_ttl,
             "jti": str(uuid.uuid4()),
             "iss": self._issuer,
             "typ": "access",
         }
-        access_token = jwt.encode(access_payload, self._private_key, algorithm=self._algorithm)
+        return jwt.encode(payload, self._private_key, algorithm=self._algorithm)
 
-        # Refresh Token
-        refresh_payload = {
-            **claims,
+    def _create_refresh_token(self, sub: str, now: datetime) -> str:
+        payload = {
+            "sub": sub,
             "iat": now,
             "exp": now + self._refresh_token_ttl,
             "jti": str(uuid.uuid4()),
             "iss": self._issuer,
             "typ": "refresh",
         }
-        refresh_token = jwt.encode(refresh_payload, self._private_key, algorithm=self._algorithm)
+        return jwt.encode(payload, self._private_key, algorithm=self._algorithm)
 
-        return access_token, refresh_token
+    def validate_access_token(self, token: str) -> ValidatedClaims:
+        claims = self.validate(token)
+        if claims.typ != "access":
+            raise TokenInvalidError(f"Token type mismatch: expected access, got {claims.typ}")
+        return claims
 
-    def validate_access_token(self, token: str) -> JWTClaims:
-        return self._validate(token, expected_type="access")
+    def validate_refresh_token(self, token: str) -> ValidatedClaims:
+        claims = self.validate(token)
+        if claims.typ != "refresh":
+            raise TokenInvalidError(f"Token type mismatch: expected refresh, got {claims.typ}")
+        return claims
 
-    def validate_refresh_token(self, token: str) -> JWTClaims:
-        return self._validate(token, expected_type="refresh")
-
-    def _validate(self, token: str, expected_type: str) -> JWTClaims:
+    def validate(self, token: str) -> ValidatedClaims:
         try:
             payload = jwt.decode(
                 token,
@@ -69,12 +79,8 @@ class JWTTokenFactory(TokenFactory):
                 algorithms=[self._algorithm],
                 issuer=self._issuer,
             )
+            return ValidatedClaims(**payload)
         except jwt.ExpiredSignatureError:
             raise TokenExpiredError("Token has expired")
         except jwt.InvalidTokenError as exc:
             raise TokenInvalidError(f"Invalid token: {str(exc)}")
-
-        if payload.get("typ") != expected_type:
-            raise TokenInvalidError(f"Token type mismatch: expected {expected_type}")
-
-        return JWTClaims.model_validate(payload)

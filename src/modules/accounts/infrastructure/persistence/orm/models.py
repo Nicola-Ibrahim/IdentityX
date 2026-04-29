@@ -3,13 +3,6 @@ from sqlalchemy.orm import relationship
 
 from ......database.models import BaseSQLModel
 
-# Association table linking accounts and roles.
-account_roles = Table(
-    "account_roles",
-    BaseSQLModel.metadata,
-    Column("account_id", ForeignKey("accounts.id", ondelete="CASCADE"), primary_key=True),
-    Column("role_id", ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
-)
 
 
 class User(BaseSQLModel):
@@ -52,7 +45,7 @@ class AccountModel(BaseSQLModel):  # type: ignore[misc]
         cascade="all, delete-orphan",
     )
     sessions = relationship("SessionModel", back_populates="account", cascade="all, delete-orphan")
-    roles = relationship("RoleModel", secondary=account_roles, back_populates="accounts")
+    roles = Column(String(256), nullable=False, default="user")
 
 
 class CredentialModel(BaseSQLModel):  # type: ignore[misc]
@@ -76,14 +69,6 @@ class SessionModel(BaseSQLModel):  # type: ignore[misc]
     account = relationship("AccountModel", back_populates="sessions")
 
 
-class RoleModel(BaseSQLModel):  # type: ignore[misc]
-    __tablename__ = "roles"
-
-    uuid = Column(String(36), unique=True, nullable=False, index=True)
-    name = Column(String(64), unique=True, nullable=False)
-    description = Column(Text, nullable=True)
-
-    accounts = relationship("AccountModel", secondary=account_roles, back_populates="roles")
 
 
 class RevokedTokenModel(BaseSQLModel):

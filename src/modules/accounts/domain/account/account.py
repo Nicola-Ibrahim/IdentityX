@@ -3,8 +3,8 @@ from typing import Iterable
 from pydantic import Field
 
 from .....building_blocks.domain.aggregate_root import AggregateRoot
-from ..role.value_objects.role_id import RoleId
 from .value_objects.account_id import AccountId
+from .value_objects.account_role import AccountRole
 from .value_objects.account_status import AccountStatus
 from .value_objects.email import Email
 from .value_objects.hashed_password import HashedPassword
@@ -17,7 +17,7 @@ class Account(AggregateRoot[AccountId]):
     _email: Email
     _password: HashedPassword
     _status: AccountStatus = Field(default_factory=AccountStatus.create)
-    _role_ids: set[RoleId] = Field(default_factory=set, repr=False)
+    _roles: set[AccountRole] = Field(default_factory=lambda: {AccountRole.USER}, repr=False)
 
     # ------------------------------------------------------------------
     # Properties
@@ -39,8 +39,8 @@ class Account(AggregateRoot[AccountId]):
         return self._status.is_active
 
     @property
-    def role_ids(self) -> Iterable[RoleId]:
-        return tuple(self._role_ids)
+    def roles(self) -> Iterable[AccountRole]:
+        return tuple(self._roles)
 
     # ------------------------------------------------------------------
     # Behaviour
@@ -70,13 +70,13 @@ class Account(AggregateRoot[AccountId]):
         if self._password != new_hashed_password:
             self._password = new_hashed_password
 
-    def assign_role(self, role_id: RoleId) -> None:
-        if role_id not in self._role_ids:
-            self._role_ids.add(role_id)
+    def assign_role(self, role: AccountRole) -> None:
+        if role not in self._roles:
+            self._roles.add(role)
 
-    def remove_role(self, role_id: RoleId) -> None:
-        if role_id in self._role_ids:
-            self._role_ids.remove(role_id)
+    def remove_role(self, role: AccountRole) -> None:
+        if role in self._roles:
+            self._roles.remove(role)
 
     def can_login(self) -> bool:
         return self._status.is_active and self._status.is_verified

@@ -1,11 +1,7 @@
-"""ORM models for the accounts persistence adapters."""
-
-from .models import AccountModel, CredentialModel, RoleModel, SessionModel, account_roles
+from .models import AccountModel, CredentialModel, SessionModel
 
 __all__ = [
     "AccountModel",
     "CredentialModel",
     "SessionModel",
-    "RoleModel",
-    "account_roles",
 ]

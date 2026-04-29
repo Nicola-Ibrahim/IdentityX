@@ -1,13 +1,17 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
-
 
 from pydantic import BaseModel, Field
 
 
-class JWTClaims(BaseModel):
+class TokenPayload(BaseModel):
+    """Basic claims required to issue a token pair."""
+
+    sub: str = Field(..., description="Subject (account_id)")
+    sid: str | None = Field(None, description="Session ID")
+
+
+class ValidatedClaims(BaseModel):
     """Modern Pydantic model for JWT payload validation."""
 
     sub: str = Field(..., description="Subject (account_id)")
@@ -23,24 +27,25 @@ class JWTClaims(BaseModel):
         return datetime.fromtimestamp(self.exp)
 
 
-class TokenFactory(ABC):
+class TokenService(ABC):
     """Abstract interface for modern RS256 JWT operations."""
 
     @abstractmethod
-    def create_tokens(self, claims: dict[str, Any]) -> tuple[str, str]:
+    def create_tokens(self, claims: TokenPayload) -> tuple[str, str]:
         """Create an (access_token, refresh_token) pair."""
         pass
 
     @abstractmethod
-    def validate_access_token(self, token: str) -> JWTClaims:
-        """Validate an access token and return claims.
-        Raises TokenError subtypes on failure.
-        """
+    def validate(self, token: str) -> ValidatedClaims:
+        """Validate any JWT token and return its claims."""
         pass
 
     @abstractmethod
-    def validate_refresh_token(self, token: str) -> JWTClaims:
-        """Validate a refresh token and return claims.
-        Raises TokenError subtypes on failure.
-        """
+    def validate_access_token(self, token: str) -> ValidatedClaims:
+        """Validate an access token and return claims."""
+        pass
+
+    @abstractmethod
+    def validate_refresh_token(self, token: str) -> ValidatedClaims:
+        """Validate a refresh token and return claims."""
         pass
