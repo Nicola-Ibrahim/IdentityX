@@ -1,5 +1,6 @@
 from dependency_injector import containers, providers
 
+from .....building_blocks.infrastructure.database import SQLAlchemySessionFactory, SQLAlchemySettings
 from ...application.account.service import AccountService
 from ...application.authentication.service import AuthenticationService
 from ..crypto.jwt_token import JWTTokenService
@@ -11,21 +12,39 @@ from ..persistence.uow import SQLAlchemyUnitOfWork
 class AccountsDIContainer(containers.DeclarativeContainer):
     """Top-level dependency injection container for the Accounts Bounded Context."""
 
+    async def stop(self) -> None:
+        """Asynchronous stop of all container resources."""
+        if self._session_factory.initialized:
+            factory = self._session_factory()
+            await factory.dispose()
+        self.shutdown_resources()
+        self.unwire()
+
     # -- Core & Configuration --
     config = providers.Configuration()
-    _session_factory = providers.Dependency()
+
+    @staticmethod
+    def _create_session_factory(config_dict: dict):
+        config = SQLAlchemySettings(**config_dict)
+        factory = SQLAlchemySessionFactory(config)
+        yield factory
+
+    _session_factory = providers.Resource(
+        _create_session_factory,
+        config=config.database,
+    )
 
     # -- Infrastructure: Security & Crypto (Internal) --
     _password_hasher = providers.Singleton(PBKDF2PasswordHasher)
 
     _token_service = providers.Singleton(
         JWTTokenService,
-        private_key=config.jwt_private_key,
-        public_key=config.jwt_public_key,
-        algorithm=config.jwt_algorithm,
-        issuer=config.jwt_issuer,
-        access_token_ttl_minutes=config.jwt_access_token_expire_minutes,
-        refresh_token_ttl_days=config.jwt_refresh_token_expire_days,
+        private_key=config.backend.jwt_private_key,
+        public_key=config.backend.jwt_public_key,
+        algorithm=config.backend.jwt_algorithm,
+        issuer=config.backend.jwt_issuer,
+        access_token_ttl_minutes=config.backend.jwt_access_token_expire_minutes,
+        refresh_token_ttl_days=config.backend.jwt_refresh_token_expire_days,
     )
 
     # -- Infrastructure: Messaging (Internal) --

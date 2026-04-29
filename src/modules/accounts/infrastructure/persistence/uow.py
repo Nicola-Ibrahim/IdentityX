@@ -1,36 +1,39 @@
 from typing import Callable, Self
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from ...domain.interfaces.unit_of_work import UnitOfWork
+from ....building_blocks.infrastructure.unit_of_work import AsyncUnitOfWork
+from ...domain.interfaces.unit_of_work import UnitOfWork as IUnitOfWork
 from .repositories.sql_account_repo import SQLAccountRepository
 from .repositories.sql_session_repo import SQLSessionRepository
 
 
-class SQLAlchemyUnitOfWork(UnitOfWork):
+class SQLAlchemyUnitOfWork(AsyncUnitOfWork, IUnitOfWork):
     """SQLAlchemy implementation of the Unit of Work pattern."""
 
-    def __init__(self, session_factory: Callable[[], Session]) -> None:
+    def __init__(self, session_factory: Callable[[], AsyncSession]) -> None:
+        super().__init__()
         self._session_factory = session_factory
-        self._session: Session | None = None
+        self._session: AsyncSession | None = None
 
-    def __enter__(self) -> Self:
+    async def __aenter__(self) -> Self:
         self._session = self._session_factory()
         self.accounts = SQLAccountRepository(self._session)
         self.sessions = SQLSessionRepository(self._session)
         return self
 
-    def __exit__(self, exc_type, exc_val, traceback) -> None:
-        if self._session:
-            if exc_type:
-                self.rollback()
-            self._session.close()
-        self._session = None
+    async def __aexit__(self, exc_type, exc_val, traceback) -> None:
+        try:
+            await super().__aexit__(exc_type, exc_val, traceback)
+        finally:
+            if self._session:
+                await self._session.close()
+            self._session = None
 
-    def commit(self) -> None:
+    async def commit(self) -> None:
         if self._session:
-            self._session.commit()
+            await self._session.commit()
 
-    def rollback(self) -> None:
+    async def rollback(self) -> None:
         if self._session:
-            self._session.rollback()
+            await self._session.rollback()

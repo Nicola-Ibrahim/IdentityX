@@ -1,8 +1,7 @@
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Table, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String
 from sqlalchemy.orm import relationship
 
 from ......database.models import BaseSQLModel
-
 
 
 class User(BaseSQLModel):
@@ -69,10 +68,9 @@ class SessionModel(BaseSQLModel):  # type: ignore[misc]
     account = relationship("AccountModel", back_populates="sessions")
 
 
-
-
 class RevokedTokenModel(BaseSQLModel):
     """Stores JTI of revoked tokens until they expire naturally."""
+
     __tablename__ = "revoked_tokens"
 
     jti = Column(String(36), unique=True, nullable=False, index=True)

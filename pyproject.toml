@@ -1,7 +1,7 @@
 [project]
-name = "bot-chatting"
+name = "IdentityX"
 version = "0.1.0"
-description = "Add your description here"
+description = "Production-ready Identity & Access Management service built with DDD and FastAPI."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12"

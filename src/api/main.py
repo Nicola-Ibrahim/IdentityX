@@ -28,9 +28,7 @@ class APIFactory:
             startups: list[object] = []
             modules: dict[str, object] = {}
             try:
-                accounts = AccountsStartUp().initialize(
-                    database_url=settings.DATABASE_URL,
-                )
+                accounts = AccountsStartUp().initialize()
                 startups.append(accounts)
                 modules["accounts"] = accounts
                 app.state.backend_modules = modules
@@ -38,7 +36,7 @@ class APIFactory:
             finally:
                 for startup in reversed(startups):
                     try:
-                        startup.stop()
+                        await startup.stop()
                     except Exception:
                         pass
 

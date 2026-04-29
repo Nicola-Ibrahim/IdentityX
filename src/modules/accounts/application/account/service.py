@@ -23,22 +23,22 @@ class AccountService:
         self._password_hasher = password_hasher
         self._notifications = notification_service
 
-    def register(self, email: str, password: str) -> tuple[Account, AccountDTO]:
-        with self.uow:
+    async def register(self, email: str, password: str) -> tuple[Account, AccountDTO]:
+        async with self.uow:
             email_vo = Email.create(email)
             password_vo = Password.create(password)
 
-            if self.uow.accounts.exists_by_email(str(email_vo)):
+            if await self.uow.accounts.exists_by_email(str(email_vo)):
                 raise ValueError("An account with this email already exists")
 
             hashed = HashedPassword.create(self._password_hasher.encode(password_vo.value))
 
             account = Account.register(email=email_vo, hashed_password=hashed)
 
-            self.uow.accounts.add(account)
-            self.uow.commit()
+            await self.uow.accounts.add(account)
+            await self.uow.commit()
 
-            self._notifications.send_welcome_email(str(email_vo))
+            await self._notifications.send_welcome_email(str(email_vo))
 
             dto = AccountDTO(
                 id=str(account.id.value),
@@ -48,13 +48,13 @@ class AccountService:
             )
             return account, dto
 
-    def get_by_id(self, account_id: str) -> AccountDTO:
+    async def get_by_id(self, account_id: str) -> AccountDTO:
         try:
             account_id = AccountId.create(uuid.UUID(account_id))
         except (ValueError, AttributeError):
             return None
-        with self.uow:
-            account = self.uow.accounts.get_by_id(account_id)
+        async with self.uow:
+            account = await self.uow.accounts.get_by_id(account_id)
             if not account:
                 return None
             return AccountDTO(
@@ -65,9 +65,10 @@ class AccountService:
                 roles=tuple(r.value for r in account.roles),
             )
 
-    def list(self) -> tuple[AccountDTO, ...]:
-        with self.uow:
-            accounts = (
+    async def list(self) -> tuple[AccountDTO, ...]:
+        async with self.uow:
+            accounts_iter = await self.uow.accounts.list_accounts()
+            accounts = [
                 AccountDTO(
                     id=str(account.id.value),
                     email=str(account.email),
@@ -75,15 +76,15 @@ class AccountService:
                     is_active=account.is_active,
                     roles=tuple(r.value for r in account.roles),
                 )
-                for account in self.uow.accounts.list_accounts()
-            )
+                for account in accounts_iter
+            ]
             return tuple(accounts)
 
-    def update(self, account_id: str, data: dict[str, Any]) -> AccountDTO:
+    async def update(self, account_id: str, data: dict[str, Any]) -> AccountDTO:
         account_id = AccountId.create(uuid.UUID(account_id))
 
-        with self.uow:
-            account = self.uow.accounts.get_by_id(account_id)
+        async with self.uow:
+            account = await self.uow.accounts.get_by_id(account_id)
             if not account:
                 raise ValueError("Account not found")
 
@@ -97,8 +98,8 @@ class AccountService:
             elif data.get("is_active") is False:
                 account.deactivate()
 
-            self.uow.accounts.update(account)
-            self.uow.commit()
+            await self.uow.accounts.update(account)
+            await self.uow.commit()
 
             dto = AccountDTO(
                 id=str(account.id.value),
@@ -109,25 +110,25 @@ class AccountService:
             )
             return dto
 
-    def remove(self, account_id: str) -> None:
+    async def remove(self, account_id: str) -> None:
         try:
             account_id = AccountId.create(uuid.UUID(account_id))
         except (ValueError, AttributeError) as exc:
             raise ValueError("Invalid account identifier") from exc
-        with self.uow:
-            self.uow.accounts.remove(account_id)
-            self.uow.commit()
+        async with self.uow:
+            await self.uow.accounts.remove(account_id)
+            await self.uow.commit()
 
-    def verify(self, account_id: str) -> tuple[Account, AccountDTO]:
+    async def verify(self, account_id: str) -> tuple[Account, AccountDTO]:
         account_id = AccountId.create(uuid.UUID(account_id))
-        with self.uow:
-            account = self.uow.accounts.get_by_id(account_id)
+        async with self.uow:
+            account = await self.uow.accounts.get_by_id(account_id)
             if not account:
                 raise ValueError("Account not found")
 
             account.verify()
-            self.uow.accounts.update(account)
-            self.uow.commit()
+            await self.uow.accounts.update(account)
+            await self.uow.commit()
 
             dto = AccountDTO(
                 id=str(account.id.value),

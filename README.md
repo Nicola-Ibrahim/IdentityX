@@ -1,55 +1,102 @@
-# 🌌 Horizon Chat System
+# 🛡️ IdentityX
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
-[![Next.js](https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Redis](https://img.shields.io/badge/redis-%23DD0031.svg?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
-[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
-[![Domain-Driven Design](https://img.shields.io/badge/DDD-Architecture-blue?style=for-the-badge)](docs/ddd/resources.md)
+[![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white)](https://www.sqlalchemy.org/)
+[![Domain-Driven Design](https://img.shields.io/badge/Architecture-DDD-blue?style=for-the-badge)](https://en.wikipedia.org/wiki/Domain-driven_design)
 
-**Horizon Chat System** is a production-ready, AI-native communication platform built with a focus on high-quality software engineering principles. It leverages **Domain-Driven Design (DDD)** and a **Modular Monolith** architecture to provide a scalable, maintainable, and robust system for bot-driven and user-driven conversations.
+**IdentityX** is a high-performance, production-ready Identity and Access Management (IAM) service. Built with a strict adherence to **Domain-Driven Design (DDD)** and **Clean Architecture**, it provides a robust foundation for secure user authentication, session management, and role-based access control.
 
 ---
 
-## ✨ Project Highlights
+## ✨ Key Features
 
-- 🧩 **Modular Monolith**: Clear boundaries between Bounded Contexts (Auth, Chat, AI).
-- 🏗️ **Clean Architecture**: Deep separation of Domain, Application, and Infrastructure concerns.
-- 🤖 **AI-Native**: Seamlessly integrated with external AI providers for intelligent bot interactions.
-- ⚡ **Event-Driven**: Asynchronous workflows powered by an internal mediator and domain events.
-- 🚄 **Modern Tooling**: Leveraging `uv` for lightning-fast Python dependency management.
+- 🔐 **Secure Authentication**: Multi-layered security with modern password hashing and verification.
+- 🔄 **JWT Token Rotation**: Secure Access/Refresh token pairs with single-use refresh rotation to prevent replay attacks.
+- 📂 **Stateful Sessions**: Database-backed session tracking for granular revocation and auditability.
+- 🏗️ **Domain-Driven Design**: Clear separation of concerns with Domain, Application, and Infrastructure layers.
+- 🎭 **Flexible RBAC**: Simplified yet powerful Account Role management via an extensible Enum-based system.
+- 🚄 **Modern Tooling**: Leveraging `uv` for lightning-fast dependency management and `Ruff` for uncompromising code quality.
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Backend**: Python 3.12+, FastAPI, SQLAlchemy 2.0, Alembic, Pydantic v2.
-- **Frontend**: Next.js 14, TypeScript, Tailwind CSS.
-- **Infrastructure**: PostgreSQL, Redis, NGINX, Docker & Docker Compose.
-- **Development**: Ruff (linting), Pytest (testing), uv (package management).
+- **Framework**: [FastAPI](https://fastapi.tiangolo.com/) (Asynchronous Python)
+- **Database**: [PostgreSQL](https://www.postgresql.org/) with [SQLAlchemy 2.0](https://www.sqlalchemy.org/) ORM
+- **Migrations**: [Alembic](https://alembic.sqlalchemy.org/)
+- **Identity**: [PyJWT](https://pyjwt.readthedocs.io/) for token handling & [Azure Identity](https://learn.microsoft.com/en-us/python/api/overview/azure/identity-readme) for cloud-native secret management.
+- **Validation**: [Pydantic v2](https://docs.pydantic.dev/) for strict type safety and data integrity.
+- **Tooling**: [uv](https://github.com/astral-sh/uv), [Ruff](https://github.com/astral-sh/ruff), [Pytest](https://docs.pytest.org/).
 
 ---
 
 ## 🚀 Getting Started
 
-Quickly spin up the entire stack using Docker:
+### Prerequisites
+
+Ensure you have [uv](https://github.com/astral-sh/uv) installed:
 
 ```bash
-docker compose -f docker-compose.dev.yml up --build
+curl -LsSf https://astral-sh.uv.run/install.sh | sh
 ```
 
-- **Frontend**: [http://localhost:3000](http://localhost:3000)
-- **API Documentation**: [http://localhost/docs](http://localhost/docs) (via NGINX)
+### Installation
 
-For detailed local setup, troubleshooting, and backend/frontend development, visit the [**Setup Guide**](docs/building/setup.md).
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/Nicola-Ibrahim/IdentityX.git
+   cd IdentityX
+   ```
+
+2. **Setup the environment**:
+   ```bash
+   uv sync
+   ```
+
+3. **Run migrations**:
+   ```bash
+   uv run poe db-upgrade
+   ```
+
+4. **Start the development server**:
+   ```bash
+   uv run poe dev
+   ```
+
+The API will be available at `http://localhost:8000`. Explore the interactive documentation at `http://localhost:8000/docs`.
 
 ---
 
-## 📚 Documentation Deep-Dive
+## 🏗️ Architecture
 
-We take documentation seriously. Explore our detailed guides:
+IdentityX follows a **Modular Monolith** approach inspired by Clean Architecture:
 
-- **[Documentation Index](docs/README.md)** - Your map to everything.
-- **[Architecture & Design](docs/design/architecture.md)** - How the system is built.
-- **[DDD Implementation](docs/ddd/implementation.md)** - Mapping theory to our codebase.
-- **[Feature Guides](docs/features/conversations.md)** - Details on Auth, RBAC, and Conversations.
+- **Domain**: Pure business logic, entities (Account, Session), and value objects (Email, Password).
+- **Application**: Use cases and orchestration (AuthenticationService).
+- **Infrastructure**: Concrete implementations of persistence (SQL Repositories), token generation, and external integrations.
+- **API**: FastAPI routes and dependency injection.
+
+---
+
+## 🧪 Testing & Quality
+
+We maintain high standards through automated testing and linting:
+
+```bash
+# Run tests
+uv run poe test
+
+# Check linting
+uv run poe lint
+
+# Format code
+uv run poe format
+```
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

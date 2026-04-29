@@ -7,21 +7,21 @@ from .session_repository import SessionRepository
 
 class UnitOfWork(ABC):
     """Abstract base class for the Unit of Work pattern.
-    
+
     This interface defines the transaction boundary and provides access to repositories.
     """
-    
+
     accounts: AccountRepository
     sessions: SessionRepository
 
     @abstractmethod
-    def __enter__(self) -> Self: ...
+    async def __aenter__(self) -> Self: ...
 
     @abstractmethod
-    def __exit__(self, exc_type, exc_val, traceback) -> None: ...
+    async def __aexit__(self, exc_type, exc_val, traceback) -> None: ...
 
     @abstractmethod
-    def commit(self) -> None: ...
+    async def commit(self) -> None: ...
 
     @abstractmethod
-    def rollback(self) -> None: ...
+    async def rollback(self) -> None: ...

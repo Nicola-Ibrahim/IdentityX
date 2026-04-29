@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager, AbstractContextManager
 from typing import Dict, Type, TypeVar
 
 TRepository = TypeVar("TRepository")
 
 
-class UnitOfWork(AbstractContextManager["UnitOfWork"]):
-    """Base class for implementing the Unit of Work pattern."""
+
+
+class AsyncUnitOfWork(AbstractAsyncContextManager["AsyncUnitOfWork"]):
+    """Base class for implementing the Asynchronous Unit of Work pattern."""
 
     def __init__(self) -> None:
         self._repositories: Dict[Type, object] = {}
@@ -16,20 +18,20 @@ class UnitOfWork(AbstractContextManager["UnitOfWork"]):
     # ------------------------------------------------------------------ #
     # Context manager API
     # ------------------------------------------------------------------ #
-    def __enter__(self) -> "UnitOfWork":
-        self.begin()
+    async def __aenter__(self) -> "AsyncUnitOfWork":
+        await self.begin()
         self._active = True
         return self
 
-    def __exit__(self, exc_type, exc, tb) -> None:
+    async def __aexit__(self, exc_type, exc, tb) -> None:
         try:
             if exc_type:
-                self.rollback()
+                await self.rollback()
             else:
-                self.commit()
+                await self.commit()
         finally:
             self._active = False
-            self.close()
+            await self.close()
 
     # ------------------------------------------------------------------ #
     # Repository registry
@@ -46,20 +48,14 @@ class UnitOfWork(AbstractContextManager["UnitOfWork"]):
     # ------------------------------------------------------------------ #
     # Hooks for subclasses
     # ------------------------------------------------------------------ #
-    def begin(self) -> None:
+    async def begin(self) -> None:
         """Hook for starting a transaction boundary."""
 
-    def commit(self) -> None:
+    async def commit(self) -> None:
         raise NotImplementedError
 
-    def rollback(self) -> None:
+    async def rollback(self) -> None:
         raise NotImplementedError
 
-    def close(self) -> None:
+    async def close(self) -> None:
         """Hook for cleaning up resources."""
-
-
-class AbstractUnitOfWork(UnitOfWork):
-    """Backwards compatible alias for the former abstract base class."""
-
-    pass

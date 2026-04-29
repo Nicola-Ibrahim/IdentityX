@@ -1,7 +1,8 @@
 import uuid
 from typing import Iterable, Optional
 
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .....accounts.domain.account.account import Account
 from .....accounts.domain.account.value_objects.account_id import AccountId
@@ -16,7 +17,7 @@ from ..orm.models import AccountModel, CredentialModel
 class SQLAccountRepository(AccountRepository):
     """SQLAlchemy implementation of :class:`AccountRepository`."""
 
-    def __init__(self, session: Session) -> None:
+    def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
     def _to_domain(self, record: AccountModel) -> Account:
@@ -47,7 +48,7 @@ class SQLAccountRepository(AccountRepository):
             record.credential.hashed_password = account.hashed_password.value
 
     # Interface implementation -------------------------------------------------
-    def add(self, account: Account) -> None:
+    async def add(self, account: Account) -> None:
         record = AccountModel(
             uuid=str(account.id.value),
             email=str(account.email),
@@ -58,31 +59,46 @@ class SQLAccountRepository(AccountRepository):
         record.credential = CredentialModel(hashed_password=account.hashed_password.value)
         self._session.add(record)
 
-    def update(self, account: Account) -> None:
-        db_account = (
-            self._session.query(AccountModel).filter(AccountModel.uuid == str(account.id.value)).one_or_none()
+    async def update(self, account: Account) -> None:
+        result = await self._session.execute(
+            select(AccountModel).filter(AccountModel.uuid == str(account.id.value))
         )
+        db_account = result.scalars().first()
         if not db_account:
             raise ValueError("Account not found")
         self._apply_domain(account, db_account)
 
-    def get_by_id(self, account_id: AccountId) -> Optional[Account]:
-        record = self._session.query(AccountModel).filter(AccountModel.uuid == str(account_id.value)).one_or_none()
+    async def get_by_id(self, account_id: AccountId) -> Optional[Account]:
+        result = await self._session.execute(
+            select(AccountModel).filter(AccountModel.uuid == str(account_id.value))
+        )
+        record = result.scalars().first()
         return self._to_domain(record) if record else None
 
-    def get_by_email(self, email: str) -> Optional[Account]:
-        record = self._session.query(AccountModel).filter(AccountModel.email == email).one_or_none()
+    async def get_by_email(self, email: str) -> Optional[Account]:
+        result = await self._session.execute(
+            select(AccountModel).filter(AccountModel.email == email)
+        )
+        record = result.scalars().first()
         return self._to_domain(record) if record else None
 
-    def exists_by_email(self, email: str) -> bool:
-        return self._session.query(AccountModel.uuid).filter(AccountModel.email == email).first() is not None
+    async def exists_by_email(self, email: str) -> bool:
+        result = await self._session.execute(
+            select(AccountModel.uuid).filter(AccountModel.email == email)
+        )
+        return result.first() is not None
 
-    def list_accounts(self) -> Iterable[Account]:
-        records = self._session.query(AccountModel).order_by(AccountModel.created_at.asc()).all()
+    async def list_accounts(self) -> Iterable[Account]:
+        result = await self._session.execute(
+            select(AccountModel).order_by(AccountModel.created_at.asc())
+        )
+        records = result.scalars().all()
         return [self._to_domain(record) for record in records]
 
-    def remove(self, account_id: AccountId) -> None:
-        record = self._session.query(AccountModel).filter(AccountModel.uuid == str(account_id.value)).one_or_none()
+    async def remove(self, account_id: AccountId) -> None:
+        result = await self._session.execute(
+            select(AccountModel).filter(AccountModel.uuid == str(account_id.value))
+        )
+        record = result.scalars().first()
         if record:
-            self._session.delete(record)
-
+            await self._session.delete(record)

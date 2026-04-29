@@ -25,10 +25,10 @@ class AuthenticationService:
         self._token_service = token_service
         self._session_ttl = session_ttl or timedelta(hours=12)
 
-    def authenticate(self, email: str, password: str) -> IssuedTokenPairDTO:
+    async def authenticate(self, email: str, password: str) -> IssuedTokenPairDTO:
         """Authenticate user and issue a new token pair."""
-        with self.uow:
-            account = self.uow.accounts.get_by_email(str(Email.create(email)))
+        async with self.uow:
+            account = await self.uow.accounts.get_by_email(str(Email.create(email)))
 
             if not account:
                 raise ValueError("Invalid credentials")
@@ -54,8 +54,8 @@ class AuthenticationService:
                 session_id=session_id,
             )
 
-            self.uow.sessions.add(session)
-            self.uow.commit()
+            await self.uow.sessions.add(session)
+            await self.uow.commit()
 
             return IssuedTokenPairDTO(
                 access_token=access,
@@ -63,14 +63,14 @@ class AuthenticationService:
                 expires_in=int(self._session_ttl.total_seconds()),
             )
 
-    def refresh_session(self, refresh_token_str: str) -> IssuedTokenPairDTO:
+    async def refresh_session(self, refresh_token_str: str) -> IssuedTokenPairDTO:
         """Rotate tokens using a valid refresh token."""
         # 1. Validate JWT structure and signature
         claims = self._token_service.validate_refresh_token(refresh_token_str)
 
-        with self.uow:
+        async with self.uow:
             # 2. Load and validate domain session
-            session = self.uow.sessions.get_by_refresh_token(RefreshToken.create(refresh_token_str))
+            session = await self.uow.sessions.get_by_refresh_token(RefreshToken.create(refresh_token_str))
 
             if not session:
                 raise ValueError("Session not found")
@@ -83,17 +83,17 @@ class AuthenticationService:
 
             # 3. Revoke old session (single-use rotation)
             session.revoke()
-            self.uow.sessions.update(session)
+            await self.uow.sessions.update(session)
 
             # 4. Issue new session and tokens
-            result = self.authenticate_by_id(claims.sub)
-            self.uow.commit()
+            result = await self.authenticate_by_id(claims.sub)
+            await self.uow.commit()
             return result
 
-    def authenticate_by_id(self, account_id: str) -> IssuedTokenPairDTO:
+    async def authenticate_by_id(self, account_id: str) -> IssuedTokenPairDTO:
         """Issue tokens for an already verified account (internal use)."""
-        with self.uow:
-            account = self.uow.accounts.get_by_id(AccountId.create(uuid.UUID(account_id)))
+        async with self.uow:
+            account = await self.uow.accounts.get_by_id(AccountId.create(uuid.UUID(account_id)))
             if not account:
                 raise ValueError("Account not found")
 
@@ -114,7 +114,7 @@ class AuthenticationService:
                 session_id=session_id,
             )
 
-            self.uow.sessions.add(session)
+            await self.uow.sessions.add(session)
             # Commit is handled by the caller or this block if it's the top-level call
 
             return IssuedTokenPairDTO(
@@ -123,18 +123,19 @@ class AuthenticationService:
                 expires_in=int(self._session_ttl.total_seconds()),
             )
 
-    def logout(self, refresh_token_str: str) -> None:
+    async def logout(self, refresh_token_str: str) -> None:
         """Revoke a session based on the refresh token."""
         try:
-            claims = self._token_service.validate_refresh_token(refresh_token_str)
+            # We don't strictly need to await anything here unless validate becomes async
+            self._token_service.validate_refresh_token(refresh_token_str)
 
-            with self.uow:
+            async with self.uow:
                 # Revoke domain session
-                session = self.uow.sessions.get_by_refresh_token(RefreshToken.create(refresh_token_str))
+                session = await self.uow.sessions.get_by_refresh_token(RefreshToken.create(refresh_token_str))
                 if session:
                     session.revoke()
-                    self.uow.sessions.update(session)
-                    self.uow.commit()
+                    await self.uow.sessions.update(session)
+                    await self.uow.commit()
         except Exception:
             # Logout should be silent if token is already invalid
             pass

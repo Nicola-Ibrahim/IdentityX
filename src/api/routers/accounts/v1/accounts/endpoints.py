@@ -13,6 +13,7 @@ from .register_account_request import RegisterAccountRequest
 from .token_response import TokenResponse
 from .update_account_request import UpdateAccountRequest
 from .verify_account_request import VerifyAccountRequest
+from ......api.core.security.dependencies import get_current_account_id
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
 
@@ -30,7 +31,7 @@ async def register_account(
 ) -> AccountResponse:
     try:
         # Service takes email and password strings
-        _, dto = account_service.register(payload.email, payload.password)
+        _, dto = await account_service.register(payload.email, payload.password)
         return AccountResponse(
             id=dto.id,
             email=dto.email,
@@ -53,7 +54,7 @@ async def verify_account(
 ) -> AccountResponse:
     try:
         # Service takes account_id string
-        _, dto = account_service.verify(payload.account_id)
+        _, dto = await account_service.verify(payload.account_id)
         return AccountResponse(
             id=dto.id,
             email=dto.email,
@@ -75,7 +76,7 @@ async def login_for_access_token(
     auth_service: AuthenticationService = Depends(Provide[AccountsDIContainer.authentication_service]),
 ) -> TokenResponse:
     try:
-        pair = auth_service.authenticate(form_data.username, form_data.password)
+        pair = await auth_service.authenticate(form_data.username, form_data.password)
         return TokenResponse.from_dto(pair)
     except ValueError as exc:
         raise HTTPException(
@@ -96,7 +97,7 @@ async def refresh_token(
     auth_service: AuthenticationService = Depends(Provide[AccountsDIContainer.authentication_service]),
 ) -> TokenResponse:
     try:
-        pair = auth_service.refresh_session(payload.refresh_token)
+        pair = await auth_service.refresh_session(payload.refresh_token)
         return TokenResponse.from_dto(pair)
     except (TokenError, ValueError) as exc:
         raise HTTPException(
@@ -117,7 +118,7 @@ async def logout(
     _: str = Depends(get_current_account_id),
     auth_service: AuthenticationService = Depends(Provide[AccountsDIContainer.authentication_service]),
 ) -> None:
-    auth_service.logout(payload.refresh_token)
+    await auth_service.logout(payload.refresh_token)
 
 
 @router.get(
@@ -130,7 +131,7 @@ async def get_current_account(
     account_id: str = Depends(get_current_account_id),
     account_service: AccountService = Depends(Provide[AccountsDIContainer.account_service]),
 ) -> AccountResponse:
-    dto = account_service.get_by_id(account_id)
+    dto = await account_service.get_by_id(account_id)
     if not dto:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
     return AccountResponse(
@@ -152,7 +153,7 @@ async def get_account(
     _: str = Depends(get_current_account_id),
     account_service: AccountService = Depends(Provide[AccountsDIContainer.account_service]),
 ) -> AccountResponse:
-    dto = account_service.get_by_id(account_id)
+    dto = await account_service.get_by_id(account_id)
     if not dto:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
     return AccountResponse(
@@ -172,7 +173,7 @@ async def get_account(
 async def list_accounts(
     account_service: AccountService = Depends(Provide[AccountsDIContainer.account_service]),
 ) -> list[AccountResponse]:
-    dtos = account_service.list()
+    dtos = await account_service.list()
     return [
         AccountResponse(
             id=dto.id,
@@ -197,7 +198,7 @@ async def update_account(
 ) -> AccountResponse:
     try:
         # Service takes account_id string and dict
-        dto = account_service.update(account_id, payload.model_dump(exclude_unset=True))
+        dto = await account_service.update(account_id, payload.model_dump(exclude_unset=True))
         return AccountResponse(
             id=dto.id,
             email=dto.email,
@@ -219,6 +220,6 @@ async def delete_account(
     account_service: AccountService = Depends(Provide[AccountsDIContainer.account_service]),
 ) -> None:
     try:
-        account_service.remove(account_id)
+        await account_service.remove(account_id)
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))

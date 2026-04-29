@@ -1,8 +1,7 @@
-# src/api/core/config/base.py
 import logging.config
 from typing import Any
 
-from pydantic import AnyHttpUrl
+from pydantic import AnyHttpUrl, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,13 +10,10 @@ class ApiSettings(BaseSettings):
 
     # Pydantic v2-style config
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
         env_prefix="BACKEND_",
         case_sensitive=True,
         extra="ignore",
         env_ignore_empty=True,
-        env_file_optional=True,
     )
 
     # Application Metadata
@@ -39,8 +35,6 @@ class ApiSettings(BaseSettings):
     CORS_ALLOW_METHODS: list[str] = ["*"]
     CORS_ALLOW_HEADERS: list[str] = ["*"]
 
-    # Simple database URL string (instead of PostgresDsn + validator)
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/identityx"
 
     # Logging defaults (overridable per environment)
     LOGGER_NAME: str = "identityx"

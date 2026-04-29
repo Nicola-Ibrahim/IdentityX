@@ -96,69 +96,6 @@ wheels = [
 ]
 
 [[package]]
-name = "bot-chatting"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "alembic" },
-    { name = "azure-identity" },
-    { name = "azure-keyvault-secrets" },
-    { name = "dependency-injector" },
-    { name = "fastapi", extra = ["all"] },
-    { name = "fastapi-cli" },
-    { name = "psycopg" },
-    { name = "pydantic" },
-    { name = "pyjwt" },
-    { name = "python-dotenv" },
-    { name = "returns" },
-    { name = "sqlalchemy" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "colorlog" },
-    { name = "pre-commit" },
-]
-lint = [
-    { name = "ruff" },
-]
-test = [
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "pytest-xdist" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "alembic", specifier = ">=1.16.0" },
-    { name = "azure-identity", specifier = ">=1.19.0" },
-    { name = "azure-keyvault-secrets", specifier = ">=4.9.0" },
-    { name = "dependency-injector", specifier = ">=4.44.0" },
-    { name = "fastapi", extras = ["all"], specifier = ">=0.115.6" },
-    { name = "fastapi-cli", specifier = ">=0.0.6" },
-    { name = "psycopg", specifier = ">=3.3.3" },
-    { name = "pydantic", specifier = ">=2.10.3" },
-    { name = "pyjwt", specifier = ">=2.10.1" },
-    { name = "python-dotenv", specifier = ">=1.0.1" },
-    { name = "returns", specifier = ">=0.24.0" },
-    { name = "sqlalchemy", specifier = ">=2.0.36" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "colorlog", specifier = ">=6.9.0" },
-    { name = "pre-commit", specifier = ">=4.0.1" },
-]
-lint = [{ name = "ruff", specifier = ">=0.8.3" }]
-test = [
-    { name = "pytest", specifier = ">=8.3.4" },
-    { name = "pytest-asyncio", specifier = ">=0.25.0" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
-    { name = "pytest-xdist", specifier = ">=3.6.1" },
-]
-
-[[package]]
 name = "certifi"
 version = "2026.4.22"
 source = { registry = "https://pypi.org/simple" }
@@ -804,6 +741,69 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/52/63/51723b5f116cc04b061cb6f5a561790abf249d25931d515cd375e063e0f4/identify-2.6.19.tar.gz", hash = "sha256:6be5020c38fcb07da56c53733538a3081ea5aa70d36a156f83044bfbf9173842", size = 99567, upload-time = "2026-04-17T18:39:50.265Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/94/84/d9273cd09688070a6523c4aee4663a8538721b2b755c4962aafae0011e72/identify-2.6.19-py2.py3-none-any.whl", hash = "sha256:20e6a87f786f768c092a721ad107fc9df0eb89347be9396cadf3f4abbd1fb78a", size = 99397, upload-time = "2026-04-17T18:39:49.221Z" },
+]
+
+[[package]]
+name = "identityx"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "alembic" },
+    { name = "azure-identity" },
+    { name = "azure-keyvault-secrets" },
+    { name = "dependency-injector" },
+    { name = "fastapi", extra = ["all"] },
+    { name = "fastapi-cli" },
+    { name = "psycopg" },
+    { name = "pydantic" },
+    { name = "pyjwt", extra = ["crypto"] },
+    { name = "python-dotenv" },
+    { name = "returns" },
+    { name = "sqlalchemy" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "colorlog" },
+    { name = "pre-commit" },
+]
+lint = [
+    { name = "ruff" },
+]
+test = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-xdist" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "alembic", specifier = ">=1.16.0" },
+    { name = "azure-identity", specifier = ">=1.19.0" },
+    { name = "azure-keyvault-secrets", specifier = ">=4.9.0" },
+    { name = "dependency-injector", specifier = ">=4.44.0" },
+    { name = "fastapi", extras = ["all"], specifier = ">=0.115.6" },
+    { name = "fastapi-cli", specifier = ">=0.0.6" },
+    { name = "psycopg", specifier = ">=3.3.3" },
+    { name = "pydantic", specifier = ">=2.10.3" },
+    { name = "pyjwt", extras = ["crypto"], specifier = ">=2.10.1" },
+    { name = "python-dotenv", specifier = ">=1.0.1" },
+    { name = "returns", specifier = ">=0.24.0" },
+    { name = "sqlalchemy", specifier = ">=2.0.36" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "colorlog", specifier = ">=6.9.0" },
+    { name = "pre-commit", specifier = ">=4.0.1" },
+]
+lint = [{ name = "ruff", specifier = ">=0.8.3" }]
+test = [
+    { name = "pytest", specifier = ">=8.3.4" },
+    { name = "pytest-asyncio", specifier = ">=0.25.0" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-xdist", specifier = ">=3.6.1" },
 ]
 
 [[package]]
