@@ -1,5 +1,4 @@
-from datetime import datetime, timezone
-from typing import Iterable
+from datetime import datetime
 
 from pydantic import Field
 
@@ -15,39 +14,24 @@ from .value_objects.session_id import SessionId
 class Account(AggregateRoot[AccountId]):
     """Aggregate root representing an account within the system."""
 
-    _id: AccountId
-    _email: Email
-    _password: HashedPassword
-    _status: AccountStatus = Field(default_factory=AccountStatus.create)
-    _roles: set[AccountRole] = Field(default_factory=lambda: {AccountRole.USER}, repr=False)
-    _session_ids: list[SessionId] = Field(default_factory=list)
+    id: AccountId
+    email: Email
+    password: HashedPassword
+    status: AccountStatus = Field(default_factory=AccountStatus.create)
+    roles: set[AccountRole] = Field(default_factory=lambda: {AccountRole.USER}, repr=False)
+    session_ids: list[SessionId] = Field(default_factory=list)
 
     # ------------------------------------------------------------------
     # Properties
     # ------------------------------------------------------------------
-    @property
-    def email(self) -> Email:
-        return self._email
-
-    @property
-    def hashed_password(self) -> HashedPassword:
-        return self._password
 
     @property
     def is_verified(self) -> bool:
-        return self._status.is_verified
+        return self.status.is_verified
 
     @property
     def is_active(self) -> bool:
-        return self._status.is_active
-
-    @property
-    def roles(self) -> Iterable[AccountRole]:
-        return tuple(self._roles)
-
-    @property
-    def session_ids(self) -> Iterable[SessionId]:
-        return tuple(self._session_ids)
+        return self.status.is_active
 
     # ------------------------------------------------------------------
     # Behaviour
@@ -61,12 +45,10 @@ class Account(AggregateRoot[AccountId]):
     ) -> "Account":
         """Factory method to register a new account aggregate."""
         return cls(
-            _id=AccountId.create(),
-            _email=email,
-            _password=password,
-            _roles=roles or {AccountRole.USER},
-            _created_at=datetime.now(timezone.utc),
-            _updated_at=datetime.now(timezone.utc),
+            id=AccountId.create(),
+            email=email,
+            password=password,
+            roles=roles or {AccountRole.USER},
         )
 
     @classmethod
@@ -83,43 +65,43 @@ class Account(AggregateRoot[AccountId]):
     ) -> "Account":
         """Reconstitute an account from existing data (e.g. from persistence)."""
         return cls(
-            _id=id,
-            _email=email,
-            _password=password,
-            _status=status,
-            _roles=roles,
-            _created_at=created_at,
-            _updated_at=updated_at,
-            _session_ids=session_ids or [],
+            id=id,
+            email=email,
+            password=password,
+            status=status,
+            roles=roles,
+            created_at=created_at,
+            updated_at=updated_at,
+            session_ids=session_ids or [],
         )
 
     def verify(self) -> None:
-        if not self._status.is_verified:
-            self._status = self._status.mark_verified()
+        if not self.status.is_verified:
+            self.status = self.status.mark_verified()
 
     def deactivate(self) -> None:
-        if self._status.is_active:
-            self._status = self._status.deactivate()
+        if self.status.is_active:
+            self.status = self.status.deactivate()
 
     def activate(self) -> None:
-        if not self._status.is_active:
-            self._status = self._status.activate()
+        if not self.status.is_active:
+            self.status = self.status.activate()
 
     def change_email(self, new_email: Email) -> None:
-        if str(self._email) != str(new_email):
-            self._email = new_email
+        if str(self.email) != str(new_email):
+            self.email = new_email
 
     def change_password(self, new_hashed_password: HashedPassword) -> None:
-        if self._password != new_hashed_password:
-            self._password = new_hashed_password
+        if self.password != new_hashed_password:
+            self.password = new_hashed_password
 
     def assign_role(self, role: AccountRole) -> None:
-        if role not in self._roles:
-            self._roles.add(role)
+        if role not in self.roles:
+            self.roles.add(role)
 
     def remove_role(self, role: AccountRole) -> None:
-        if role in self._roles:
-            self._roles.remove(role)
+        if role in self.roles:
+            self.roles.remove(role)
 
     def can_login(self) -> bool:
-        return self._status.is_active and self._status.is_verified
+        return self.status.is_active and self.status.is_verified

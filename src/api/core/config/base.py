@@ -1,7 +1,7 @@
 import logging.config
 from typing import Any
 
-from pydantic import AnyHttpUrl, field_validator
+from pydantic import AnyHttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -25,6 +25,7 @@ class ApiSettings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     WORKERS: int = 1
+    API_VERSION: str = "v1"
 
     # Security
     SECRET_KEY: str = "change-me-in-production"
@@ -52,33 +53,38 @@ class ApiSettings(BaseSettings):
         """Return dictConfig ready logging configuration for the environment."""
         handler_name = "json_console" if self.LOG_USE_JSON else "console"
 
+        formatters = {
+            "default": {
+                "()": "uvicorn.logging.DefaultFormatter",
+                "fmt": self.LOG_FORMAT,
+                "datefmt": self.LOG_DATEFMT,
+                "use_colors": self.LOG_USE_COLORS,
+            },
+        }
+        handlers = {
+            "console": {
+                "class": "logging.StreamHandler",
+                "formatter": "default",
+                "stream": "ext://sys.stdout",
+            },
+        }
+
+        if self.LOG_USE_JSON:
+            formatters["json"] = {
+                "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
+                "fmt": self.LOG_FORMAT,
+            }
+            handlers["json_console"] = {
+                "class": "logging.StreamHandler",
+                "formatter": "json",
+                "stream": "ext://sys.stdout",
+            }
+
         return {
             "version": 1,
             "disable_existing_loggers": False,
-            "formatters": {
-                "default": {
-                    "()": "uvicorn.logging.DefaultFormatter",
-                    "fmt": self.LOG_FORMAT,
-                    "datefmt": self.LOG_DATEFMT,
-                    "use_colors": self.LOG_USE_COLORS,
-                },
-                "json": {
-                    "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
-                    "fmt": self.LOG_FORMAT,
-                },
-            },
-            "handlers": {
-                "console": {
-                    "class": "logging.StreamHandler",
-                    "formatter": "default",
-                    "stream": "ext://sys.stdout",
-                },
-                "json_console": {
-                    "class": "logging.StreamHandler",
-                    "formatter": "json",
-                    "stream": "ext://sys.stdout",
-                },
-            },
+            "formatters": formatters,
+            "handlers": handlers,
             "loggers": {
                 self.LOGGER_NAME: {
                     "handlers": [handler_name],

@@ -4,13 +4,13 @@ from fastapi.security import OAuth2PasswordBearer
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/accounts/token")
 
-from ......modules.accounts.application.interfaces.token_errors import (
+from ....modules.accounts.application.interfaces.token_errors import (
     TokenError,
     TokenExpiredError,
     TokenRevokedError,
 )
-from ......modules.accounts.infrastructure.configuration.containers import AccountsDIContainer
-from ...modules.accounts.application.authentication.service import AuthenticationService
+from ....modules.accounts.infrastructure.configuration.containers import AccountsDIContainer
+from ....modules.accounts.application.authentication.service import AuthenticationService
 
 
 @inject

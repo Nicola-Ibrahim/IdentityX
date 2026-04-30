@@ -1,7 +1,6 @@
-from enum import EnumStr
+from enum import StrEnum
 
-
-class ErrorType(EnumStr):
+class ErrorType(StrEnum):
     """Enumeration of high-level domain error categories."""
 
     BUSINESS_RULE_VIOLATION = "BusinessRuleViolation"
@@ -14,7 +13,7 @@ class ErrorType(EnumStr):
     INTERNAL_ERROR = "InternalError"
 
 
-class ErrorCode(EnumStr):
+class ErrorCode(StrEnum):
     """Enumeration of well-known domain error codes."""
 
     BUSINESS_RULE_VIOLATION = "BusinessRuleViolation"

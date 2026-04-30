@@ -24,9 +24,9 @@ class AccountsDIContainer(containers.DeclarativeContainer):
     config = providers.Configuration()
 
     @staticmethod
-    def _create_session_factory(config_dict: dict):
-        config = SQLAlchemySettings(**config_dict)
-        factory = SQLAlchemySessionFactory(config)
+    def _create_session_factory(config: dict):
+        settings = SQLAlchemySettings(**config)
+        factory = SQLAlchemySessionFactory(settings)
         yield factory
 
     _session_factory = providers.Resource(

@@ -1,12 +1,12 @@
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
+
+from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from ...domain.account.account import Account
 
 
-@dataclass(slots=True, frozen=True)
-class AccountDTO:
+class AccountDTO(BaseModel):
     id: str
     email: str
     is_verified: bool

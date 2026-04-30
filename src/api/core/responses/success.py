@@ -1,34 +1,54 @@
-from typing import Any, Optional
+from datetime import datetime
+from typing import Any, Generic, Optional, TypeVar
 
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 
-from .schemas import BaseResponse
+from ..config import get_settings
+
+T = TypeVar("T")
+
+
+class ResponseEnvelope(BaseModel, Generic[T]):
+    """Standardized API response envelope for documentation and validation"""
+
+    api_version: str
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    success: bool = True
+    data: T
+    meta: Optional[dict] = None
+    links: Optional[dict] = None
+    message: Optional[str] = None
 
 
 class APIResponse(JSONResponse):
-    """Standardized API success response that auto-converts to JSONResponse"""
+    """
+    Standardized API response that auto-converts to JSONResponse while maintaining
+    the ResponseEnvelope structure.
+    """
 
     def __init__(
         self,
         *,
-        data: Optional[Any] = None,
-        meta: Optional[dict] = None,
-        links: Optional[dict] = None,
-        message: Optional[str] = None,
+        data: Any,
+        meta: dict | None = None,
+        links: dict | None = None,
+        message: str | None = None,
         status_code: int = 200,
-        version: str = "v1",
         **kwargs,
     ):
-        # Build the response data
-        response_data = BaseResponse(api_version=version, success=True, data=data, meta=meta, links=links)
+        # Build the content using the envelope schema for consistency
+        envelope = ResponseEnvelope(
+            api_version=get_settings().API_VERSION,
+            data=data,
+            meta=meta,
+            links=links,
+            message=message,
+        )
 
-        if message:
-            response_data.message = message
-
-        # Initialize JSONResponse directly
         super().__init__(
-            content=response_data.model_dump(),
+            content=envelope.model_dump(mode="json"),
             status_code=status_code,
-            headers={"Content-Type": "application/json", "X-API-Version": version},
+            headers={"Content-Type": "application/json", "X-API-Version": get_settings().API_VERSION},
             **kwargs,
         )

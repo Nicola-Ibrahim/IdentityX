@@ -86,7 +86,7 @@ class APIFactory:
         for router in routers:
             self.app.include_router(
                 router,
-                prefix=f"/api/{self.settings.VERSION}",
+                prefix=f"/{self.settings.API_VERSION}",
                 tags=[router.tags[0]] if router.tags else None,
             )
 

@@ -9,7 +9,7 @@ TResult = TypeVar("TResult")  # Type of the success value
 TError = TypeVar("TError", bound=DomainException)  # Type of the error (must be an exception)
 
 
-class Result(Generic[TResult, TError], BaseModel):
+class Result(BaseModel, Generic[TResult, TError]):
     """
     Class for encapsulating the outcome of an operation,
     which can either succeed (SuccessResult) or fail (ErrorResult).

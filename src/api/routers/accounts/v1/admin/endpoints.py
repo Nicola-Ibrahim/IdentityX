@@ -1,12 +1,12 @@
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from ......api.core.responses.success import APIResponse
-from ......api.core.utils.pagination import PaginationParams, get_pagination
-from ......modules.accounts.application.account.service import AccountService
-from ......modules.accounts.application.authentication.service import AuthenticationService
-from ......modules.accounts.infrastructure.configuration.containers import AccountsDIContainer
-from ..accounts.account_response import AccountResponse
+from src.api.core.responses.success import APIResponse, ResponseEnvelope
+from src.api.core.utils.pagination import PaginationParams, get_pagination
+from src.modules.accounts.application.account.dto import AccountDTO
+from src.modules.accounts.application.account.service import AccountService
+from src.modules.accounts.application.authentication.service import AuthenticationService
+from src.modules.accounts.infrastructure.configuration.containers import AccountsDIContainer
 
 admin_router = APIRouter(prefix="/admin/accounts", tags=["admin-accounts"])
 
@@ -17,6 +17,7 @@ def raise_http(e):
 
 @admin_router.get(
     "/",
+    response_model=ResponseEnvelope[list[AccountDTO]],
     summary="List all accounts",
 )
 @inject
@@ -28,15 +29,7 @@ async def list_accounts(
 
     return result.match(
         on_success=lambda data: APIResponse(
-            data=[
-                AccountResponse(
-                    id=dto.id,
-                    email=dto.email,
-                    is_verified=dto.is_verified,
-                    is_active=dto.is_active,
-                )
-                for dto in data[0]
-            ],
+            data=[dto.model_dump() for dto in data[0]],
             meta={
                 "pagination": {
                     "total": data[1],
@@ -44,6 +37,7 @@ async def list_accounts(
                     "offset": pagination.offset,
                 }
             },
+            status_code=status.HTTP_200_OK,
         ),
         on_failure=raise_http,
     )
@@ -51,21 +45,19 @@ async def list_accounts(
 
 @admin_router.post(
     "/{account_id}/suspend",
-    response_model=AccountResponse,
+    response_model=ResponseEnvelope[AccountDTO],
     summary="Suspend an account",
 )
 @inject
 async def suspend_account(
     account_id: str,
     account_service: AccountService = Depends(Provide[AccountsDIContainer.account_service]),
-) -> AccountResponse:
+) -> APIResponse:
     result = await account_service.deactivate(account_id)
     return result.match(
-        on_success=lambda dto: AccountResponse(
-            id=dto.id,
-            email=dto.email,
-            is_verified=dto.is_verified,
-            is_active=dto.is_active,
+        on_success=lambda dto: APIResponse(
+            data=dto.model_dump(),
+            status_code=status.HTTP_200_OK,
         ),
         on_failure=raise_http,
     )
@@ -73,21 +65,19 @@ async def suspend_account(
 
 @admin_router.post(
     "/{account_id}/activate",
-    response_model=AccountResponse,
+    response_model=ResponseEnvelope[AccountDTO],
     summary="Activate a suspended account",
 )
 @inject
 async def activate_account(
     account_id: str,
     account_service: AccountService = Depends(Provide[AccountsDIContainer.account_service]),
-) -> AccountResponse:
+) -> APIResponse:
     result = await account_service.activate(account_id)
     return result.match(
-        on_success=lambda dto: AccountResponse(
-            id=dto.id,
-            email=dto.email,
-            is_verified=dto.is_verified,
-            is_active=dto.is_active,
+        on_success=lambda dto: APIResponse(
+            data=dto.model_dump(),
+            status_code=status.HTTP_200_OK,
         ),
         on_failure=raise_http,
     )
@@ -109,21 +99,19 @@ async def revoke_account_sessions(
 
 @admin_router.get(
     "/{account_id}",
-    response_model=AccountResponse,
+    response_model=ResponseEnvelope[AccountDTO],
     summary="Retrieve a single account",
 )
 @inject
 async def get_account(
     account_id: str,
     account_service: AccountService = Depends(Provide[AccountsDIContainer.account_service]),
-) -> AccountResponse:
+) -> APIResponse:
     result = await account_service.get_by_id(account_id)
     return result.match(
-        on_success=lambda dto: AccountResponse(
-            id=dto.id,
-            email=dto.email,
-            is_verified=dto.is_verified,
-            is_active=dto.is_active,
+        on_success=lambda dto: APIResponse(
+            data=dto.model_dump(),
+            status_code=status.HTTP_200_OK,
         ),
         on_failure=raise_http,
     )

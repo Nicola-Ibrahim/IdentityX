@@ -3,7 +3,7 @@ from contextlib import AbstractAsyncContextManager
 from typing import Self
 
 
-class BaseUnitOfWork(ABC, AbstractAsyncContextManager["BaseUnitOfWork"]):
+class BaseUnitOfWork(AbstractAsyncContextManager["BaseUnitOfWork"]):
     """Abstract base class for the Unit of Work pattern.
 
     Provides a standard context manager implementation that delegates to
