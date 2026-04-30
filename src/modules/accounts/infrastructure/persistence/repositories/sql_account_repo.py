@@ -1,6 +1,6 @@
 from typing import Iterable
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -20,8 +20,8 @@ from ..orm.models import AccountORM
 class SQLBaseAccountRepository(BaseAccountRepository):
     """SQLAlchemy implementation of :class:`BaseAccountRepository`."""
 
-    def __init__(self, session: AsyncSession) -> None:
-        self._session = session
+    def __init__(self, db_session: AsyncSession) -> None:
+        self._db_session = db_session
 
     def _to_domain(self, record: AccountORM) -> Account:
         id = AccountId.create(record.id)
@@ -59,14 +59,14 @@ class SQLBaseAccountRepository(BaseAccountRepository):
             is_active=account.is_active,
             roles=",".join(r.value for r in account.roles),
         )
-        self._session.add(record)
+        self._db_session.add(record)
         try:
-            await self._session.flush()
+            await self._db_session.flush()
         except IntegrityError:
             raise AccountRecordConflictError(str(account.email))
 
     async def update(self, account: Account) -> None:
-        result = await self._session.execute(select(AccountORM).filter(AccountORM.id == account.id.value))
+        result = await self._db_session.execute(select(AccountORM).filter(AccountORM.id == account.id.value))
         db_account = result.scalars().first()
         if not db_account:
             raise AccountRecordNotFoundError(str(account.id.value))
@@ -79,30 +79,36 @@ class SQLBaseAccountRepository(BaseAccountRepository):
 
     async def get_by_id(self, account_id: AccountId) -> Account | None:
         stmt = select(AccountORM).options(selectinload(AccountORM.sessions)).filter(AccountORM.id == account_id.value)
-        result = await self._session.execute(stmt)
+        result = await self._db_session.execute(stmt)
         record = result.scalars().first()
         return self._to_domain(record) if record else None
 
     async def get_by_email(self, email: str) -> Account | None:
         stmt = select(AccountORM).options(selectinload(AccountORM.sessions)).filter(AccountORM.email == email)
-        result = await self._session.execute(stmt)
+        result = await self._db_session.execute(stmt)
         record = result.scalars().first()
         return self._to_domain(record) if record else None
 
     async def exists_by_email(self, email: str) -> bool:
         stmt = select(AccountORM.id).filter(AccountORM.email == email)
-        result = await self._session.execute(stmt)
+        result = await self._db_session.execute(stmt)
         return result.first() is not None
 
-    async def list_accounts(self) -> Iterable[Account]:
-        stmt = select(AccountORM).order_by(AccountORM.created_at.asc())
-        result = await self._session.execute(stmt)
+    async def list_accounts(self, limit: int = 100, offset: int = 0) -> tuple[Iterable[Account], int]:
+        # 1. Get total count
+        count_stmt = select(func.count()).select_from(AccountORM)
+        total_result = await self._db_session.execute(count_stmt)
+        total_count = total_result.scalar_one()
+
+        # 2. Get paginated results
+        stmt = select(AccountORM).order_by(AccountORM.created_at.asc()).limit(limit).offset(offset)
+        result = await self._db_session.execute(stmt)
         records = result.scalars().all()
-        return [self._to_domain(record) for record in records]
+        return [self._to_domain(record) for record in records], total_count
 
     async def remove(self, account_id: AccountId) -> None:
         stmt = select(AccountORM).filter(AccountORM.id == account_id.value)
-        result = await self._session.execute(stmt)
+        result = await self._db_session.execute(stmt)
         record = result.scalars().first()
         if record:
-            await self._session.delete(record)
+            await self._db_session.delete(record)

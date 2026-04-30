@@ -27,8 +27,8 @@ class BaseAccountRepository(ABC):
         """Return ``True`` when an account already uses the email."""
 
     @abstractmethod
-    async def list_accounts(self) -> Iterable[Account]:
-        """Return all accounts sorted by creation date."""
+    async def list_accounts(self, limit: int = 100, offset: int = 0) -> tuple[Iterable[Account], int]:
+        """Return accounts with pagination and total count, sorted by creation date."""
 
     @abstractmethod
     async def remove(self, account_id: AccountId) -> None:

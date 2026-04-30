@@ -2,9 +2,9 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
+from ......api.core.security.dependencies import get_current_account_id
 from ......modules.accounts.application.account.service import AccountService
 from ......modules.accounts.application.authentication.service import AuthenticationService
-from ......modules.accounts.application.interfaces.token_errors import TokenError
 from ......modules.accounts.infrastructure.configuration.containers import AccountsDIContainer
 from .account_response import AccountResponse
 from .logout_request import LogoutRequest
@@ -12,10 +12,12 @@ from .refresh_token_request import RefreshTokenRequest
 from .register_account_request import RegisterAccountRequest
 from .token_response import TokenResponse
 from .update_account_request import UpdateAccountRequest
-from .verify_account_request import VerifyAccountRequest
-from ......api.core.security.dependencies import get_current_account_id
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
+
+
+def raise_http(e):
+    raise HTTPException(status_code=e.status_code, detail=e.message)
 
 
 @router.post(
@@ -29,40 +31,38 @@ async def register_account(
     payload: RegisterAccountRequest,
     account_service: AccountService = Depends(Provide[AccountsDIContainer.account_service]),
 ) -> AccountResponse:
-    try:
-        # Service takes email and password strings
-        _, dto = await account_service.register(payload.email, payload.password)
-        return AccountResponse(
+    result = await account_service.register(payload.email, payload.password)
+    return result.match(
+        on_success=lambda dto: AccountResponse(
             id=dto.id,
             email=dto.email,
             is_verified=dto.is_verified,
             is_active=dto.is_active,
-        )
-    except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+        ),
+        on_failure=raise_http,
+    )
 
 
 @router.post(
-    "/verify",
+    "/verify/{account_id}",
     response_model=AccountResponse,
     summary="Verify an account",
 )
 @inject
 async def verify_account(
-    payload: VerifyAccountRequest,
+    account_id: str,
     account_service: AccountService = Depends(Provide[AccountsDIContainer.account_service]),
 ) -> AccountResponse:
-    try:
-        # Service takes account_id string
-        _, dto = await account_service.verify(payload.account_id)
-        return AccountResponse(
+    result = await account_service.verify(account_id)
+    return result.match(
+        on_success=lambda dto: AccountResponse(
             id=dto.id,
             email=dto.email,
             is_verified=dto.is_verified,
             is_active=dto.is_active,
-        )
-    except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+        ),
+        on_failure=raise_http,
+    )
 
 
 @router.post(
@@ -75,15 +75,8 @@ async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     auth_service: AuthenticationService = Depends(Provide[AccountsDIContainer.authentication_service]),
 ) -> TokenResponse:
-    try:
-        pair = await auth_service.authenticate(form_data.username, form_data.password)
-        return TokenResponse.from_dto(pair)
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(exc),
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    result = await auth_service.authenticate(form_data.username, form_data.password)
+    return result.match(on_success=TokenResponse.from_dto, on_failure=raise_http)
 
 
 @router.post(
@@ -96,15 +89,8 @@ async def refresh_token(
     payload: RefreshTokenRequest,
     auth_service: AuthenticationService = Depends(Provide[AccountsDIContainer.authentication_service]),
 ) -> TokenResponse:
-    try:
-        pair = await auth_service.refresh_session(payload.refresh_token)
-        return TokenResponse.from_dto(pair)
-    except (TokenError, ValueError) as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(exc),
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    result = await auth_service.refresh_session(payload.refresh_token)
+    return result.match(on_success=TokenResponse.from_dto, on_failure=raise_http)
 
 
 @router.post(
@@ -118,7 +104,8 @@ async def logout(
     _: str = Depends(get_current_account_id),
     auth_service: AuthenticationService = Depends(Provide[AccountsDIContainer.authentication_service]),
 ) -> None:
-    await auth_service.logout(payload.refresh_token)
+    result = await auth_service.logout(payload.refresh_token)
+    result.match(on_success=lambda _: None, on_failure=raise_http)
 
 
 @router.get(
@@ -131,58 +118,16 @@ async def get_current_account(
     account_id: str = Depends(get_current_account_id),
     account_service: AccountService = Depends(Provide[AccountsDIContainer.account_service]),
 ) -> AccountResponse:
-    dto = await account_service.get_by_id(account_id)
-    if not dto:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
-    return AccountResponse(
-        id=dto.id,
-        email=dto.email,
-        is_verified=dto.is_verified,
-        is_active=dto.is_active,
-    )
-
-
-@router.get(
-    "/{account_id}",
-    response_model=AccountResponse,
-    summary="Retrieve a single account",
-)
-@inject
-async def get_account(
-    account_id: str,
-    _: str = Depends(get_current_account_id),
-    account_service: AccountService = Depends(Provide[AccountsDIContainer.account_service]),
-) -> AccountResponse:
-    dto = await account_service.get_by_id(account_id)
-    if not dto:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account not found")
-    return AccountResponse(
-        id=dto.id,
-        email=dto.email,
-        is_verified=dto.is_verified,
-        is_active=dto.is_active,
-    )
-
-
-@router.get(
-    "/",
-    response_model=list[AccountResponse],
-    summary="List all accounts",
-)
-@inject
-async def list_accounts(
-    account_service: AccountService = Depends(Provide[AccountsDIContainer.account_service]),
-) -> list[AccountResponse]:
-    dtos = await account_service.list()
-    return [
-        AccountResponse(
+    result = await account_service.get_by_id(account_id)
+    return result.match(
+        on_success=lambda dto: AccountResponse(
             id=dto.id,
             email=dto.email,
             is_verified=dto.is_verified,
             is_active=dto.is_active,
-        )
-        for dto in dtos
-    ]
+        ),
+        on_failure=raise_http,
+    )
 
 
 @router.patch(
@@ -196,30 +141,13 @@ async def update_account(
     payload: UpdateAccountRequest,
     account_service: AccountService = Depends(Provide[AccountsDIContainer.account_service]),
 ) -> AccountResponse:
-    try:
-        # Service takes account_id string and dict
-        dto = await account_service.update(account_id, payload.model_dump(exclude_unset=True))
-        return AccountResponse(
+    result = await account_service.update(account_id, payload.model_dump(exclude_unset=True))
+    return result.match(
+        on_success=lambda dto: AccountResponse(
             id=dto.id,
             email=dto.email,
             is_verified=dto.is_verified,
             is_active=dto.is_active,
-        )
-    except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
-
-
-@router.delete(
-    "/{account_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="Delete an account",
-)
-@inject
-async def delete_account(
-    account_id: str,
-    account_service: AccountService = Depends(Provide[AccountsDIContainer.account_service]),
-) -> None:
-    try:
-        await account_service.remove(account_id)
-    except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+        ),
+        on_failure=raise_http,
+    )

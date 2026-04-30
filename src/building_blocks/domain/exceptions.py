@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
 
 from .enums import ErrorCode, ErrorType
@@ -13,9 +11,13 @@ class DomainException(Exception):
     message: str
     code: ErrorCode = ErrorCode.INTERNAL_ERROR
     error_type: ErrorType = ErrorType.INTERNAL_ERROR
+    status_code: int = 400
 
     def __post_init__(self) -> None:
         super().__init__(self.message)
+
+
+DomainError = DomainException
 
 
 class BusinessRuleValidationException(DomainException):
@@ -34,6 +36,7 @@ class EntityNotFoundException(DomainException):
             message=message,
             code=ErrorCode.ENTITY_NOT_FOUND,
             error_type=ErrorType.ENTITY_NOT_FOUND,
+            status_code=404
         )
 
 

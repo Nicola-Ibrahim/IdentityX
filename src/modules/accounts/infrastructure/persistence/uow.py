@@ -12,26 +12,26 @@ class SQLAlchemyUnitOfWork(BaseUnitOfWork):
 
     def __init__(self, session_factory: Callable[[], AsyncSession]) -> None:
         self._session_factory = session_factory
-        self._session: AsyncSession | None = None
+        self._db_session: AsyncSession | None = None
 
     async def begin(self) -> None:
         """Start a new session and initialize repositories."""
-        self._session = self._session_factory()
-        self.accounts = SQLBaseAccountRepository(self._session)
-        self.sessions = SQLBaseSessionRepository(self._session)
+        self._db_session = self._session_factory()
+        self.accounts = SQLBaseAccountRepository(self._db_session)
+        self.sessions = SQLBaseSessionRepository(self._db_session)
 
     async def commit(self) -> None:
         """Commit the current transaction."""
-        if self._session:
-            await self._session.commit()
+        if self._db_session:
+            await self._db_session.commit()
 
     async def rollback(self) -> None:
         """Roll back the current transaction."""
-        if self._session:
-            await self._session.rollback()
+        if self._db_session:
+            await self._db_session.rollback()
 
     async def close(self) -> None:
         """Close the underlying session."""
-        if self._session:
-            await self._session.close()
-            self._session = None
+        if self._db_session:
+            await self._db_session.close()
+            self._db_session = None

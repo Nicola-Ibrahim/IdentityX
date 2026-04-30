@@ -1,11 +1,12 @@
+from functools import wraps
 from typing import Any, Callable, Generic, TypeVar
 
 from pydantic import BaseModel
 
-from .exceptions import BusinessRuleValidationException
+from .exceptions import DomainError, DomainException
 
 TResult = TypeVar("TResult")  # Type of the success value
-TError = TypeVar("TError", bound=BusinessRuleValidationException)  # Type of the error (must be an exception)
+TError = TypeVar("TError", bound=DomainException)  # Type of the error (must be an exception)
 
 
 class Result(Generic[TResult, TError], BaseModel):
@@ -63,56 +64,6 @@ class Result(Generic[TResult, TError], BaseModel):
             return on_success(self.value)
         return on_failure(self.error)
 
-    def map(self, fn: Callable[[TResult], TResult]) -> "Result[TResult, TError]":
-        """
-        Transforms the value of a successful result.
-
-        Args:
-            fn (Callable): Function to apply on the success value.
-
-        Returns:
-            Result[TResult, TError]: A new result with the transformed value.
-        """
-        if self.is_ok:
-            return Result.ok(fn(self.value))
-        return self
-
-    def flat_map(self, fn: Callable[[TResult], "Result[Any, TError]"]) -> "Result[Any, TError]":
-        """
-        Applies a function that returns a `Result` and flattens the result.
-
-        Args:
-            fn (Callable): Function that returns a `Result`.
-
-        Returns:
-            Result[Any, TError]: A flattened result.
-        """
-        if self.is_ok:
-            return fn(self.value)
-        return self
-
-    def unwrap(self) -> TResult:
-        """
-        Returns the success value or raises an error if the result is a failure.
-
-        Returns:
-            TResult: The success value.
-
-        Raises:
-            ValueError: If the result is a failure.
-        """
-        if self.is_failure:
-            raise ValueError(f"Unwrap failed with error: {self.error}")
-        return self.value
-
-    def __repr__(self) -> str:
-        """
-        Custom repr for better debugging.
-        """
-        if self.is_ok:
-            return f"Result.ok({repr(self._value)})"
-        return f"Result.fail({repr(self._error)})"
-
     @classmethod
     def ok(cls, value: TResult) -> "Result[TResult, TError]":
         """
@@ -139,22 +90,21 @@ class Result(Generic[TResult, TError], BaseModel):
         """
         return cls(_error=error)
 
+    @staticmethod
+    def capture(func: Callable) -> Callable:
+        """Wraps a service method to return a Result object."""
 
-def resultify(fn: Callable[..., TResult]) -> Callable[..., Result[TResult, TError]]:
-    """
-    Decorator to convert a function that returns a value into a function that returns a Result.
+        @wraps(func)
+        async def wrapper(*args, **kwargs) -> "Result":
+            try:
+                # Execute the pure service logic
+                value = await func(*args, **kwargs)
+                return Result.ok(value)
+            except DomainError as e:
+                # Catch known domain errors
+                return Result.fail(e)
+            except Exception as e:
+                # Catch unexpected infrastructure errors
+                return Result.fail(DomainError(message=str(e)))
 
-    Args:
-        fn (Callable): The function to decorate.
-
-    Returns:
-        Callable: The decorated function.
-    """
-
-    def inner(*args, **kwargs) -> Result[TResult, TError]:
-        try:
-            return Result.ok(fn(*args, **kwargs))
-        except BusinessRuleValidationException as e:
-            return Result.fail(e)
-
-    return inner
+        return wrapper

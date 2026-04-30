@@ -1,5 +1,3 @@
-"""Request schema for updating an account."""
-
 from pydantic import BaseModel, EmailStr
 
 

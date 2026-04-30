@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from .....database.decorators import transactional
+from .....building_blocks.domain.result import Result
 from ...domain.account.value_objects.account_id import AccountId
 from ...domain.account.value_objects.email import Email
 from ...domain.interfaces.unit_of_work import BaseUnitOfWork
@@ -26,6 +27,7 @@ class AuthenticationService:
         self._token_service = token_service
         self._session_ttl = session_ttl or timedelta(hours=12)
 
+    @Result.capture
     @transactional
     async def authenticate(self, email: str, password: str) -> IssuedTokenPairDTO:
         """Authenticate user and issue a new token pair."""
@@ -63,6 +65,7 @@ class AuthenticationService:
             expires_in=int(self._session_ttl.total_seconds()),
         )
 
+    @Result.capture
     @transactional
     async def refresh_session(self, refresh_token_str: str) -> IssuedTokenPairDTO:
         """Rotate tokens using a valid refresh token."""
@@ -89,6 +92,7 @@ class AuthenticationService:
         result = await self.authenticate_by_id(claims.sub)
         return result
 
+    @Result.capture
     @transactional
     async def authenticate_by_id(self, account_id: str) -> IssuedTokenPairDTO:
         """Issue tokens for an already verified account (internal use)."""
@@ -119,6 +123,7 @@ class AuthenticationService:
             expires_in=int(self._session_ttl.total_seconds()),
         )
 
+    @Result.capture
     @transactional
     async def logout(self, refresh_token_str: str) -> None:
         """Revoke a session based on the refresh token."""
@@ -133,6 +138,13 @@ class AuthenticationService:
         except Exception:
             # Logout should be silent if token is already invalid
             pass
+
+    @Result.capture
+    @transactional
+    async def revoke_all_sessions(self, account_id: str) -> None:
+        """Forcefully revoke all active sessions for an account."""
+        account_id_vo = AccountId.create(uuid.UUID(account_id))
+        await self.uow.sessions.revoke_all_for_account(account_id_vo)
 
     def get_current_account_id(self, access_token_str: str) -> str:
         """Validate an access token and return the account ID."""

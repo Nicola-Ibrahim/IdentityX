@@ -1,5 +1,6 @@
 import uuid
 from .....database.decorators import transactional
+from .....building_blocks.domain.result import Result
 
 from ...domain.account.account import Account
 from ...domain.account.value_objects.account_id import AccountId
@@ -23,6 +24,7 @@ class AccountService:
         self._password_hasher = password_hasher
         self._notifications = notification_service
 
+    @Result.capture
     @transactional
     async def register(self, email: str, password: str) -> tuple[Account, AccountDTO]:
         email_vo = Email.create(email)
@@ -36,8 +38,9 @@ class AccountService:
 
         await self._notifications.send_welcome_email(str(email_vo))
 
-        return account, self._to_dto(account)
+        return AccountDTO.from_domain(account)
 
+    @Result.capture
     @transactional
     async def get_by_id(self, account_id: str) -> AccountDTO:
         try:
@@ -48,14 +51,16 @@ class AccountService:
         account = await self.uow.accounts.get_by_id(account_id_vo)
         if not account:
             return None
-        return self._to_dto(account)
+        return AccountDTO.from_domain(account)
 
+    @Result.capture
     @transactional
-    async def list(self) -> tuple[AccountDTO, ...]:
-        accounts_iter = await self.uow.accounts.list_accounts()
-        accounts = [self._to_dto(account) for account in accounts_iter]
-        return tuple(accounts)
+    async def list(self, limit: int = 100, offset: int = 0) -> tuple[tuple[AccountDTO, ...], int]:
+        accounts_iter, total_count = await self.uow.accounts.list_accounts(limit=limit, offset=offset)
+        accounts = [AccountDTO.from_domain(account) for account in accounts_iter]
+        return tuple(accounts), total_count
 
+    @Result.capture
     @transactional
     async def change_email(self, account_id: str, new_email: str) -> AccountDTO:
         account_id_vo = AccountId.create(uuid.UUID(account_id))
@@ -67,8 +72,9 @@ class AccountService:
         account.change_email(Email.create(new_email))
 
         await self.uow.accounts.update(account)
-        return self._to_dto(account)
+        return AccountDTO.from_domain(account)
 
+    @Result.capture
     @transactional
     async def change_password(self, account_id: str, new_password: str) -> AccountDTO:
         account_id_vo = AccountId.create(uuid.UUID(account_id))
@@ -84,8 +90,9 @@ class AccountService:
         await self.uow.sessions.revoke_all_for_account(account.id)
 
         await self.uow.accounts.update(account)
-        return self._to_dto(account)
+        return AccountDTO.from_domain(account)
 
+    @Result.capture
     @transactional
     async def set_activation_status(self, account_id: str, is_active: bool) -> AccountDTO:
         account_id_vo = AccountId.create(uuid.UUID(account_id))
@@ -102,17 +109,10 @@ class AccountService:
             await self.uow.sessions.revoke_all_for_account(account.id)
 
         await self.uow.accounts.update(account)
-        return self._to_dto(account)
+        return AccountDTO.from_domain(account)
 
-    def _to_dto(self, account: Account) -> AccountDTO:
-        return AccountDTO(
-            id=str(account.id.value),
-            email=str(account.email),
-            is_verified=account.is_verified,
-            is_active=account.is_active,
-            roles=tuple(r.value for r in account.roles),
-        )
 
+    @Result.capture
     @transactional
     async def remove(self, account_id: str) -> None:
         try:
@@ -122,6 +122,7 @@ class AccountService:
 
         await self.uow.accounts.remove(account_id_vo)
 
+    @Result.capture
     @transactional
     async def verify(self, account_id: str) -> tuple[Account, AccountDTO]:
         account_id_vo = AccountId.create(uuid.UUID(account_id))
@@ -131,4 +132,43 @@ class AccountService:
 
         account.verify()
         await self.uow.accounts.update(account)
-        return account, self._to_dto(account)
+        return AccountDTO.from_domain(account)
+
+    @Result.capture
+    @transactional
+    async def deactivate(self, account_id: str) -> AccountDTO:
+        account_id_vo = AccountId.create(uuid.UUID(account_id))
+        account = await self.uow.accounts.get_by_id(account_id_vo)
+        if not account:
+            raise ValueError("Account not found")
+
+        account.deactivate()
+        await self.uow.accounts.update(account)
+        return AccountDTO.from_domain(account)
+
+    @Result.capture
+    @transactional
+    async def activate(self, account_id: str) -> AccountDTO:
+        account_id_vo = AccountId.create(uuid.UUID(account_id))
+        account = await self.uow.accounts.get_by_id(account_id_vo)
+        if not account:
+            raise ValueError("Account not found")
+
+        account.activate()
+        await self.uow.accounts.update(account)
+        return AccountDTO.from_domain(account)
+
+    @Result.capture
+    @transactional
+    async def update(self, account_id: str, data: dict) -> AccountDTO:
+        account_id_vo = AccountId.create(uuid.UUID(account_id))
+        account = await self.uow.accounts.get_by_id(account_id_vo)
+        if not account:
+            raise ValueError("Account not found")
+
+        if "email" in data:
+            account.change_email(Email.create(data["email"]))
+        
+        # Note: Generic update usually handles more fields, but for now we follow the existing pattern
+        await self.uow.accounts.update(account)
+        return AccountDTO.from_domain(account)

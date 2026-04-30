@@ -17,8 +17,8 @@ from ..orm.models import SessionORM
 class SQLBaseSessionRepository(BaseSessionRepository):
     """SQLAlchemy repository for session aggregates."""
 
-    def __init__(self, session: AsyncSession) -> None:
-        self._session = session
+    def __init__(self, db_session: AsyncSession) -> None:
+        self._db_session = db_session
 
     def _to_domain(self, record: SessionORM) -> Session:
         account_id = AccountId.create(record.account.id)
@@ -46,11 +46,11 @@ class SQLBaseSessionRepository(BaseSessionRepository):
             is_active=session_domain.is_active,
             is_revoked=session_domain.is_revoked,
         )
-        self._session.add(record)
+        self._db_session.add(record)
 
     async def update(self, session_domain: Session) -> None:
         stmt = select(SessionORM).filter(SessionORM.id == session_domain.id.value)
-        result = await self._session.execute(stmt)
+        result = await self._db_session.execute(stmt)
         record = result.scalars().one_or_none()
         if not record:
             raise SessionRecordNotFoundError(str(session_domain.id.value))
@@ -61,7 +61,7 @@ class SQLBaseSessionRepository(BaseSessionRepository):
 
     async def get_by_id(self, session_id: SessionId) -> Session | None:
         stmt = select(SessionORM).options(joinedload(SessionORM.account)).filter(SessionORM.id == session_id.value)
-        result = await self._session.execute(stmt)
+        result = await self._db_session.execute(stmt)
         record = result.scalars().one_or_none()
         return self._to_domain(record) if record else None
 
@@ -69,7 +69,7 @@ class SQLBaseSessionRepository(BaseSessionRepository):
         stmt = (
             select(SessionORM).options(joinedload(SessionORM.account)).filter(SessionORM.refresh_token == token.value)
         )
-        result = await self._session.execute(stmt)
+        result = await self._db_session.execute(stmt)
         record = result.scalars().one_or_none()
         return self._to_domain(record) if record else None
 
@@ -79,7 +79,7 @@ class SQLBaseSessionRepository(BaseSessionRepository):
             .options(joinedload(SessionORM.account))
             .filter(SessionORM.account_id == account_id.value)
         )
-        result = await self._session.execute(stmt)
+        result = await self._db_session.execute(stmt)
         records = result.scalars().all()
         return [self._to_domain(record) for record in records]
 
