@@ -1,140 +1,134 @@
 import uuid
-from typing import Any
+from .....database.decorators import transactional
 
 from ...domain.account.account import Account
 from ...domain.account.value_objects.account_id import AccountId
 from ...domain.account.value_objects.email import Email
 from ...domain.account.value_objects.hashed_password import HashedPassword
 from ...domain.account.value_objects.password import Password
-from ...domain.interfaces.unit_of_work import UnitOfWork
-from ..interfaces.notification_service import INotificationService
-from ..interfaces.password_hasher import IPasswordHasher
+from ...domain.interfaces.unit_of_work import BaseUnitOfWork
+from ..interfaces.notification_service import BaseNotificationService
+from ..interfaces.password_hasher import BasePasswordHasher
 from .dto import AccountDTO
 
 
 class AccountService:
     def __init__(
         self,
-        uow: UnitOfWork,
-        password_hasher: IPasswordHasher,
-        notification_service: INotificationService,
+        uow: BaseUnitOfWork,
+        password_hasher: BasePasswordHasher,
+        notification_service: BaseNotificationService,
     ) -> None:
         self.uow = uow
         self._password_hasher = password_hasher
         self._notifications = notification_service
 
+    @transactional
     async def register(self, email: str, password: str) -> tuple[Account, AccountDTO]:
-        async with self.uow:
-            email_vo = Email.create(email)
-            password_vo = Password.create(password)
+        email_vo = Email.create(email)
+        password_vo = Password.create(password)
 
-            if await self.uow.accounts.exists_by_email(str(email_vo)):
-                raise ValueError("An account with this email already exists")
+        hashed = HashedPassword.create(self._password_hasher.encode(password_vo.value))
 
-            hashed = HashedPassword.create(self._password_hasher.encode(password_vo.value))
+        account = Account.register(email=email_vo, password=hashed)
 
-            account = Account.register(email=email_vo, password=hashed)
+        await self.uow.accounts.add(account)
 
-            await self.uow.accounts.add(account)
-            await self.uow.commit()
+        await self._notifications.send_welcome_email(str(email_vo))
 
-            await self._notifications.send_welcome_email(str(email_vo))
+        return account, self._to_dto(account)
 
-            dto = AccountDTO(
-                id=str(account.id.value),
-                email=str(email_vo),
-                is_verified=account.is_verified,
-                is_active=account.is_active,
-            )
-            return account, dto
-
+    @transactional
     async def get_by_id(self, account_id: str) -> AccountDTO:
         try:
-            account_id = AccountId.create(uuid.UUID(account_id))
+            account_id_vo = AccountId.create(uuid.UUID(account_id))
         except (ValueError, AttributeError):
             return None
-        async with self.uow:
-            account = await self.uow.accounts.get_by_id(account_id)
-            if not account:
-                return None
-            return AccountDTO(
-                id=str(account.id.value),
-                email=str(account.email),
-                is_verified=account.is_verified,
-                is_active=account.is_active,
-                roles=tuple(r.value for r in account.roles),
-            )
+        
+        account = await self.uow.accounts.get_by_id(account_id_vo)
+        if not account:
+            return None
+        return self._to_dto(account)
 
+    @transactional
     async def list(self) -> tuple[AccountDTO, ...]:
-        async with self.uow:
-            accounts_iter = await self.uow.accounts.list_accounts()
-            accounts = [
-                AccountDTO(
-                    id=str(account.id.value),
-                    email=str(account.email),
-                    is_verified=account.is_verified,
-                    is_active=account.is_active,
-                    roles=tuple(r.value for r in account.roles),
-                )
-                for account in accounts_iter
-            ]
-            return tuple(accounts)
+        accounts_iter = await self.uow.accounts.list_accounts()
+        accounts = [self._to_dto(account) for account in accounts_iter]
+        return tuple(accounts)
 
-    async def update(self, account_id: str, data: dict[str, Any]) -> AccountDTO:
-        account_id = AccountId.create(uuid.UUID(account_id))
+    @transactional
+    async def change_email(self, account_id: str, new_email: str) -> AccountDTO:
+        account_id_vo = AccountId.create(uuid.UUID(account_id))
 
-        async with self.uow:
-            account = await self.uow.accounts.get_by_id(account_id)
-            if not account:
-                raise ValueError("Account not found")
+        account = await self.uow.accounts.get_by_id(account_id_vo)
+        if not account:
+            raise ValueError("Account not found")
 
-            if data.get("email"):
-                account.change_email(Email.create(data["email"]))
-            if data.get("password"):
-                hashed = HashedPassword.create(self._password_hasher.encode(data["password"]))
-                account.change_password(hashed)
-            if data.get("is_active") is True:
-                account.activate()
-            elif data.get("is_active") is False:
-                account.deactivate()
+        account.change_email(Email.create(new_email))
 
-            await self.uow.accounts.update(account)
-            await self.uow.commit()
+        await self.uow.accounts.update(account)
+        return self._to_dto(account)
 
-            dto = AccountDTO(
-                id=str(account.id.value),
-                email=str(account.email),
-                is_verified=account.is_verified,
-                is_active=account.is_active,
-                roles=tuple(r.value for r in account.roles),
-            )
-            return dto
+    @transactional
+    async def change_password(self, account_id: str, new_password: str) -> AccountDTO:
+        account_id_vo = AccountId.create(uuid.UUID(account_id))
 
+        account = await self.uow.accounts.get_by_id(account_id_vo)
+        if not account:
+            raise ValueError("Account not found")
+
+        hashed = HashedPassword.create(self._password_hasher.encode(new_password))
+        account.change_password(hashed)
+
+        # Security Side Effect: Revoke all sessions on password change
+        await self.uow.sessions.revoke_all_for_account(account.id)
+
+        await self.uow.accounts.update(account)
+        return self._to_dto(account)
+
+    @transactional
+    async def set_activation_status(self, account_id: str, is_active: bool) -> AccountDTO:
+        account_id_vo = AccountId.create(uuid.UUID(account_id))
+
+        account = await self.uow.accounts.get_by_id(account_id_vo)
+        if not account:
+            raise ValueError("Account not found")
+
+        if is_active:
+            account.activate()
+        else:
+            account.deactivate()
+            # Security Side Effect: Revoke all sessions on deactivation
+            await self.uow.sessions.revoke_all_for_account(account.id)
+
+        await self.uow.accounts.update(account)
+        return self._to_dto(account)
+
+    def _to_dto(self, account: Account) -> AccountDTO:
+        return AccountDTO(
+            id=str(account.id.value),
+            email=str(account.email),
+            is_verified=account.is_verified,
+            is_active=account.is_active,
+            roles=tuple(r.value for r in account.roles),
+        )
+
+    @transactional
     async def remove(self, account_id: str) -> None:
         try:
-            account_id = AccountId.create(uuid.UUID(account_id))
+            account_id_vo = AccountId.create(uuid.UUID(account_id))
         except (ValueError, AttributeError) as exc:
             raise ValueError("Invalid account identifier") from exc
-        async with self.uow:
-            await self.uow.accounts.remove(account_id)
-            await self.uow.commit()
+        
+        await self.uow.accounts.remove(account_id_vo)
 
+    @transactional
     async def verify(self, account_id: str) -> tuple[Account, AccountDTO]:
-        account_id = AccountId.create(uuid.UUID(account_id))
-        async with self.uow:
-            account = await self.uow.accounts.get_by_id(account_id)
-            if not account:
-                raise ValueError("Account not found")
+        account_id_vo = AccountId.create(uuid.UUID(account_id))
+        account = await self.uow.accounts.get_by_id(account_id_vo)
+        if not account:
+            raise ValueError("Account not found")
 
-            account.verify()
-            await self.uow.accounts.update(account)
-            await self.uow.commit()
-
-            dto = AccountDTO(
-                id=str(account.id.value),
-                email=str(account.email),
-                is_verified=account.is_verified,
-                is_active=account.is_active,
-                roles=tuple(r.value for r in account.roles),
-            )
-            return account, dto
+        account.verify()
+        await self.uow.accounts.update(account)
+        return account, self._to_dto(account)

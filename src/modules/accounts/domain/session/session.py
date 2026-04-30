@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from pydantic import Field
 
 from .....building_blocks.domain.aggregate_root import AggregateRoot
-from ..account.value_objects.account_id import AccountId
+from .value_objects.account_id import AccountId
 from .rules.session_expiration_must_be_future_rule import SessionExpirationMustBeFutureRule
 from .value_objects.refresh_token import RefreshToken
 from .value_objects.session_id import SessionId

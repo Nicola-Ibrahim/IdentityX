@@ -1,10 +1,7 @@
-"""Refresh token value object."""
-
 from dataclasses import dataclass
 from typing import Self
 
-from src.building_blocks.domain.value_object import ValueObject
-
+from ......building_blocks.domain.value_object import ValueObject
 from ..rules.refresh_token_must_be_secure_rule import RefreshTokenMustBeSecureRule
 
 

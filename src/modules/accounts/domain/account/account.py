@@ -9,6 +9,7 @@ from .value_objects.account_role import AccountRole
 from .value_objects.account_status import AccountStatus
 from .value_objects.email import Email
 from .value_objects.hashed_password import HashedPassword
+from .value_objects.session_id import SessionId
 
 
 class Account(AggregateRoot[AccountId]):
@@ -19,6 +20,7 @@ class Account(AggregateRoot[AccountId]):
     _password: HashedPassword
     _status: AccountStatus = Field(default_factory=AccountStatus.create)
     _roles: set[AccountRole] = Field(default_factory=lambda: {AccountRole.USER}, repr=False)
+    _session_ids: list[SessionId] = Field(default_factory=list)
 
     # ------------------------------------------------------------------
     # Properties
@@ -42,6 +44,10 @@ class Account(AggregateRoot[AccountId]):
     @property
     def roles(self) -> Iterable[AccountRole]:
         return tuple(self._roles)
+
+    @property
+    def session_ids(self) -> Iterable[SessionId]:
+        return tuple(self._session_ids)
 
     # ------------------------------------------------------------------
     # Behaviour
@@ -73,6 +79,7 @@ class Account(AggregateRoot[AccountId]):
         roles: set[AccountRole],
         created_at: datetime,
         updated_at: datetime,
+        session_ids: list[SessionId] | None = None,
     ) -> "Account":
         """Reconstitute an account from existing data (e.g. from persistence)."""
         return cls(
@@ -83,6 +90,7 @@ class Account(AggregateRoot[AccountId]):
             _roles=roles,
             _created_at=created_at,
             _updated_at=updated_at,
+            _session_ids=session_ids or [],
         )
 
     def verify(self) -> None:

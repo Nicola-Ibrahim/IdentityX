@@ -18,8 +18,6 @@ class BaseUnitOfWork(ABC, AbstractAsyncContextManager["BaseUnitOfWork"]):
         try:
             if exc_type is not None:
                 await self.rollback()
-            else:
-                await self.commit()
         finally:
             await self.close()
 

@@ -1,10 +1,8 @@
-"""Session identifier value object."""
-
 import uuid
 from dataclasses import dataclass
 from typing import Self
 
-from src.building_blocks.domain.value_object import ValueObject
+from ......building_blocks.domain.value_object import ValueObject
 
 
 @dataclass(slots=True)

@@ -5,5 +5,5 @@ by the infrastructure layer, such as notification delivery and password
 hashing.
 """
 
-from .notification_service import INotificationService  # noqa: F401
-from .password_hasher import IPasswordHasher  # noqa: F401
+from .notification_service import BaseNotificationService  # noqa: F401
+from .password_hasher import BasePasswordHasher  # noqa: F401

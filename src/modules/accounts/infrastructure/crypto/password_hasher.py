@@ -3,10 +3,10 @@ import hashlib
 import hmac
 import os
 
-from ...application.interfaces import IPasswordHasher
+from ...application.interfaces import BasePasswordHasher
 
 
-class PBKDF2PasswordHasher(IPasswordHasher):  # type: ignore[misc]
+class PBKDF2PasswordHasher(BasePasswordHasher):  # type: ignore[misc]
     """Simple PBKDF2 based password hasher.
 
     The encoded format matches ``algorithm$iterations$salt$hash`` so it can

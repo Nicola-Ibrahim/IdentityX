@@ -9,7 +9,7 @@ representation.  Implementations live in the infrastructure layer.
 from abc import ABC, abstractmethod
 
 
-class IPasswordHasher(ABC):
+class BasePasswordHasher(ABC):
     """Abstract base class for password hashing services."""
 
     @abstractmethod

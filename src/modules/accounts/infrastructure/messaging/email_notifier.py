@@ -1,7 +1,7 @@
-from ...application.interfaces import INotificationService
+from ...application.interfaces import BaseNotificationService
 
 
-class ConsoleNotificationService(INotificationService):  # type: ignore[misc]
+class ConsoleNotificationService(BaseNotificationService):  # type: ignore[misc]
     """Logs notifications to stdout for development environments."""
 
     async def send_welcome_email(self, email: str) -> None:

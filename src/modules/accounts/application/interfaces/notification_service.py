@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-class INotificationService(ABC):
+class BaseNotificationService(ABC):
     @abstractmethod
     async def send_welcome_email(self, email: str) -> None:
         """Send a welcome email to the user."""
