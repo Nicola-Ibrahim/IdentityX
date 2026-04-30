@@ -44,7 +44,7 @@ class AccountService:
             account_id_vo = AccountId.create(uuid.UUID(account_id))
         except (ValueError, AttributeError):
             return None
-        
+
         account = await self.uow.accounts.get_by_id(account_id_vo)
         if not account:
             return None
@@ -119,7 +119,7 @@ class AccountService:
             account_id_vo = AccountId.create(uuid.UUID(account_id))
         except (ValueError, AttributeError) as exc:
             raise ValueError("Invalid account identifier") from exc
-        
+
         await self.uow.accounts.remove(account_id_vo)
 
     @transactional

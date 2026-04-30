@@ -1,8 +1,8 @@
-import uuid
 from typing import Iterable
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
 from .....accounts.domain.interfaces.session_repository import BaseSessionRepository
 from .....accounts.domain.session.session import Session
@@ -11,7 +11,7 @@ from .....accounts.domain.session.value_objects.refresh_token import RefreshToke
 from .....accounts.domain.session.value_objects.session_id import SessionId
 from .....accounts.domain.session.value_objects.session_status import SessionStatus
 from ..exceptions import SessionRecordNotFoundError
-from ..orm.models import AccountORM, SessionORM
+from ..orm.models import SessionORM
 
 
 class SQLBaseSessionRepository(BaseSessionRepository):
@@ -21,9 +21,8 @@ class SQLBaseSessionRepository(BaseSessionRepository):
         self._session = session
 
     def _to_domain(self, record: SessionORM) -> Session:
-        account_uuid = record.account.uuid
-        account_id = AccountId.create(uuid.UUID(account_uuid))
-        session_id = SessionId.create(uuid.UUID(record.session_uuid))
+        account_id = AccountId.create(record.account.id)
+        session_id = SessionId.create(record.id)
         refresh = RefreshToken.create(record.refresh_token)
         status = SessionStatus.create(is_active=record.is_active)
 
@@ -39,13 +38,9 @@ class SQLBaseSessionRepository(BaseSessionRepository):
         )
 
     async def add(self, session_domain: Session) -> None:
-        result = await self._session.execute(
-            select(AccountORM).filter(AccountORM.uuid == str(session_domain.account_id.value))
-        )
-        account_record = result.scalars().one()
         record = SessionORM(
-            session_uuid=str(session_domain.id.value),
-            account_id=account_record.id,
+            id=session_domain.id.value,
+            account_id=session_domain.account_id.value,
             refresh_token=session_domain.refresh_token.value,
             expires_at=session_domain.expires_at,
             is_active=session_domain.is_active,
@@ -54,9 +49,8 @@ class SQLBaseSessionRepository(BaseSessionRepository):
         self._session.add(record)
 
     async def update(self, session_domain: Session) -> None:
-        result = await self._session.execute(
-            select(SessionORM).filter(SessionORM.session_uuid == str(session_domain.id.value))
-        )
+        stmt = select(SessionORM).filter(SessionORM.id == session_domain.id.value)
+        result = await self._session.execute(stmt)
         record = result.scalars().one_or_none()
         if not record:
             raise SessionRecordNotFoundError(str(session_domain.id.value))
@@ -66,32 +60,33 @@ class SQLBaseSessionRepository(BaseSessionRepository):
         record.is_revoked = session_domain.is_revoked
 
     async def get_by_id(self, session_id: SessionId) -> Session | None:
-        result = await self._session.execute(
-            select(SessionORM).join(SessionORM.account).filter(SessionORM.session_uuid == str(session_id.value))
-        )
+        stmt = select(SessionORM).options(joinedload(SessionORM.account)).filter(SessionORM.id == session_id.value)
+        result = await self._session.execute(stmt)
         record = result.scalars().one_or_none()
         return self._to_domain(record) if record else None
 
     async def get_by_refresh_token(self, token: RefreshToken) -> Session | None:
-        result = await self._session.execute(
-            select(SessionORM).join(SessionORM.account).filter(SessionORM.refresh_token == token.value)
+        stmt = (
+            select(SessionORM).options(joinedload(SessionORM.account)).filter(SessionORM.refresh_token == token.value)
         )
+        result = await self._session.execute(stmt)
         record = result.scalars().one_or_none()
         return self._to_domain(record) if record else None
 
     async def list_for_account(self, account_id: AccountId) -> Iterable[Session]:
-        result = await self._session.execute(
-            select(SessionORM).join(SessionORM.account).filter(AccountORM.uuid == str(account_id.value))
+        stmt = (
+            select(SessionORM)
+            .options(joinedload(SessionORM.account))
+            .filter(SessionORM.account_id == account_id.value)
         )
+        result = await self._session.execute(stmt)
         records = result.scalars().all()
         return [self._to_domain(record) for record in records]
 
     async def revoke_all_for_account(self, account_id: AccountId) -> None:
-        account_id_subquery = select(AccountORM.id).filter(AccountORM.uuid == str(account_id.value))
-
         stmt = (
             update(SessionORM)
-            .where(SessionORM.account_id.in_(account_id_subquery))
+            .where(SessionORM.account_id == account_id.value)
             .where(SessionORM.is_active.is_(True))
             .values(is_active=False, is_revoked=True)
         )

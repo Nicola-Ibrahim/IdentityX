@@ -1,26 +1,27 @@
+import uuid
 from datetime import datetime, timezone
-from sqlalchemy import DateTime, Integer
+
+from sqlalchemy import UUID, DateTime
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
 
 class BaseSQLModel(DeclarativeBase):
     """
     Base class for all SQLAlchemy models in IdentityX.
     Provides standard identity and audit fields.
     """
-    
-    # Primary Key - using integer for internal DB efficiency
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    
+
+    # Primary Key - using UUID for security and distributed generation
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+
     # Audit fields
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), 
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
     )
-    
+
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), 
+        DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
-        nullable=False
+        nullable=False,
     )

@@ -4,12 +4,14 @@ from typing import Self
 
 from ......building_blocks.domain.value_object import ValueObject
 
+
 @dataclass(frozen=True)
 class AccountId(ValueObject):
     """
     Account identifier within the Session context.
     Provides separation from the Account context's own AccountId.
     """
+
     value: uuid.UUID
 
     @classmethod

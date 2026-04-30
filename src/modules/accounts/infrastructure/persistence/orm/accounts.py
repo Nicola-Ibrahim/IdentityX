@@ -14,9 +14,6 @@ class AccountORM(BaseSQLModel):
 
     __tablename__ = "accounts"
 
-    # Identity
-    uuid: Mapped[str] = mapped_column(String(36), unique=True, nullable=False, index=True)
-
     # Credentials
     email: Mapped[str] = mapped_column(String(320), unique=True, nullable=False, index=True)
     hashed_password: Mapped[str] = mapped_column(String(512), nullable=False)
@@ -36,4 +33,4 @@ class AccountORM(BaseSQLModel):
     )
 
     def __repr__(self) -> str:
-        return f"<Account(uuid={self.uuid}, email={self.email}, active={self.is_active})>"
+        return f"<Account(id={self.id}, email={self.email}, active={self.is_active})>"
