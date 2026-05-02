@@ -1,11 +1,11 @@
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from .....database.decorators import transactional
 from .....building_blocks.domain.result import Result
+from .....database.decorators import transactional
 from ...domain.account.value_objects.account_id import AccountId
 from ...domain.account.value_objects.email import Email
-from ...domain.interfaces.unit_of_work import BaseUnitOfWork
+from ...domain.interfaces.unit_of_work import BaseAsyncUnitOfWork
 from ...domain.session.session import Session
 from ...domain.session.value_objects.refresh_token import RefreshToken
 from ...domain.session.value_objects.session_id import SessionId
@@ -17,7 +17,7 @@ from .issue_token_pair_dto import IssuedTokenPairDTO
 class AuthenticationService:
     def __init__(
         self,
-        uow: BaseUnitOfWork,
+        uow: BaseAsyncUnitOfWork,
         password_hasher: BasePasswordHasher,
         token_service: TokenService,
         session_ttl: timedelta | None = None,
@@ -150,3 +150,7 @@ class AuthenticationService:
         """Validate an access token and return the account ID."""
         claims = self._token_service.validate_access_token(access_token_str)
         return claims.sub
+
+    def get_public_key(self) -> dict:
+        """Return the public key in JWK format."""
+        return self._token_service.get_public_key_jwk()

@@ -33,10 +33,7 @@ class EntityNotFoundException(DomainException):
 
     def __init__(self, message: str = "Entity not found."):
         super().__init__(
-            message=message,
-            code=ErrorCode.ENTITY_NOT_FOUND,
-            error_type=ErrorType.ENTITY_NOT_FOUND,
-            status_code=404
+            message=message, code=ErrorCode.ENTITY_NOT_FOUND, error_type=ErrorType.ENTITY_NOT_FOUND, status_code=404
         )
 
 

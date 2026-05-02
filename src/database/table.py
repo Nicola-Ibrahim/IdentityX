@@ -5,7 +5,7 @@ from sqlalchemy import UUID, DateTime
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
-class BaseSQLModel(DeclarativeBase):
+class BaseSQLTable(DeclarativeBase):
     """
     Base class for all SQLAlchemy models in IdentityX.
     Provides standard identity and audit fields.

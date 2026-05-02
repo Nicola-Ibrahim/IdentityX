@@ -1,9 +1,9 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from contextlib import AbstractAsyncContextManager
 from typing import Self
 
 
-class BaseUnitOfWork(AbstractAsyncContextManager["BaseUnitOfWork"]):
+class BaseAsyncUnitOfWork(AbstractAsyncContextManager):
     """Abstract base class for the Unit of Work pattern.
 
     Provides a standard context manager implementation that delegates to
@@ -18,6 +18,8 @@ class BaseUnitOfWork(AbstractAsyncContextManager["BaseUnitOfWork"]):
         try:
             if exc_type is not None:
                 await self.rollback()
+            else:
+                await self.commit()
         finally:
             await self.close()
 

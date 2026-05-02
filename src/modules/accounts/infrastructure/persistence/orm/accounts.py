@@ -3,10 +3,10 @@ from typing import List
 from sqlalchemy import Boolean, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ......database.models import BaseSQLModel
+from ......database.table import BaseSQLTable
 
 
-class AccountORM(BaseSQLModel):
+class AccountTable(BaseSQLTable):
     """
     SQLAlchemy model for the 'accounts' table.
     Maps directly to the Account Aggregate Root.
@@ -25,11 +25,11 @@ class AccountORM(BaseSQLModel):
     # Permissions
     roles: Mapped[str] = mapped_column(String(256), nullable=False, default="user")
 
-    # Audit fields are inherited from BaseSQLModel (id, created_at, updated_at)
+    # Audit fields are inherited from BaseSQLTable (id, created_at, updated_at)
 
     # Relationships
-    sessions: Mapped[List["SessionORM"]] = relationship(
-        "SessionORM", back_populates="account", cascade="all, delete-orphan"
+    sessions: Mapped[List["SessionTable"]] = relationship(
+        "SessionTable", back_populates="account", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:

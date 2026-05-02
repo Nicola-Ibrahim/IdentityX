@@ -1,8 +1,10 @@
+import base64
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import jwt
+from cryptography.hazmat.primitives import serialization
 
 from ...application.interfaces.jwt import TokenPayload, TokenService, ValidatedClaims
 from ...application.interfaces.token_errors import (
@@ -84,3 +86,24 @@ class JWTTokenService(TokenService):
             raise TokenExpiredError("Token has expired")
         except jwt.InvalidTokenError as exc:
             raise TokenInvalidError(f"Invalid token: {str(exc)}")
+
+    def get_public_key_jwk(self) -> dict:
+        """Return the public key in JSON Web Key format."""
+        # Load the public key using cryptography
+        public_key = serialization.load_pem_public_key(self._public_key.encode())
+        numbers = public_key.public_numbers()
+
+        # Helper to base64url encode integers
+        def to_base64url(val: int) -> str:
+            # Convert integer to bytes
+            byte_val = val.to_bytes((val.bit_length() + 7) // 8, byteorder="big")
+            return base64.urlsafe_b64encode(byte_val).decode().rstrip("=")
+
+        return {
+            "kty": "RSA",
+            "alg": self._algorithm,
+            "use": "sig",
+            "kid": "identityx-main-key",  # Stable ID for this key
+            "n": to_base64url(numbers.n),
+            "e": to_base64url(numbers.e),
+        }

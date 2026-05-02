@@ -49,3 +49,8 @@ class TokenService(ABC):
     def validate_refresh_token(self, token: str) -> ValidatedClaims:
         """Validate a refresh token and return claims."""
         pass
+
+    @abstractmethod
+    def get_public_key_jwk(self) -> dict:
+        """Return the public key in JSON Web Key format."""
+        pass

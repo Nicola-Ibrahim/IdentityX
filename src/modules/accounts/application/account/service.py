@@ -1,13 +1,13 @@
 import uuid
-from .....database.decorators import transactional
-from .....building_blocks.domain.result import Result
 
+from .....building_blocks.domain.result import Result
+from .....database.decorators import transactional
 from ...domain.account.account import Account
 from ...domain.account.value_objects.account_id import AccountId
 from ...domain.account.value_objects.email import Email
 from ...domain.account.value_objects.hashed_password import HashedPassword
 from ...domain.account.value_objects.password import Password
-from ...domain.interfaces.unit_of_work import BaseUnitOfWork
+from ...domain.interfaces.unit_of_work import BaseAsyncUnitOfWork
 from ..interfaces.notification_service import BaseNotificationService
 from ..interfaces.password_hasher import BasePasswordHasher
 from .dto import AccountDTO
@@ -16,7 +16,7 @@ from .dto import AccountDTO
 class AccountService:
     def __init__(
         self,
-        uow: BaseUnitOfWork,
+        uow: BaseAsyncUnitOfWork,
         password_hasher: BasePasswordHasher,
         notification_service: BaseNotificationService,
     ) -> None:
@@ -111,7 +111,6 @@ class AccountService:
         await self.uow.accounts.update(account)
         return AccountDTO.from_domain(account)
 
-
     @Result.capture
     @transactional
     async def remove(self, account_id: str) -> None:
@@ -168,7 +167,7 @@ class AccountService:
 
         if "email" in data:
             account.change_email(Email.create(data["email"]))
-        
+
         # Note: Generic update usually handles more fields, but for now we follow the existing pattern
         await self.uow.accounts.update(account)
         return AccountDTO.from_domain(account)

@@ -1,6 +1,6 @@
 from typing import Self
 
-from .....building_blocks.infrastructure.database import SQLAlchemySettings
+from .....database import SQLAlchemySettings
 from .containers import AccountsDIContainer
 from .settings import AccountsSettings
 

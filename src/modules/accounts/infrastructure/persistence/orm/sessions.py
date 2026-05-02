@@ -4,10 +4,10 @@ from datetime import datetime
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ......database.models import BaseSQLModel
+from ......database.table import BaseSQLTable
 
 
-class SessionORM(BaseSQLModel):
+class SessionTable(BaseSQLTable):
     """
     SQLAlchemy model for the 'sessions' table.
     Tracks active user sessions and refresh tokens.
@@ -29,7 +29,7 @@ class SessionORM(BaseSQLModel):
     is_revoked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     # Relationships
-    account: Mapped["AccountORM"] = relationship("AccountORM", back_populates="sessions")
+    account: Mapped["AccountTable"] = relationship("AccountTable", back_populates="sessions")
 
     def __repr__(self) -> str:
         return f"<Session(id={self.id}, active={self.is_active})>"

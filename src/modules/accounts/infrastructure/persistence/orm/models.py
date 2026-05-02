@@ -1,4 +1,4 @@
-from .accounts import AccountORM
-from .sessions import SessionORM
+from .accounts import AccountTable
+from .sessions import SessionTable
 
-__all__ = ["AccountORM", "SessionORM"]
+__all__ = ["AccountTable", "SessionTable"]

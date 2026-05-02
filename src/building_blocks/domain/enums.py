@@ -1,5 +1,6 @@
 from enum import StrEnum
 
+
 class ErrorType(StrEnum):
     """Enumeration of high-level domain error categories."""
 

@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from ..modules.accounts.infrastructure.configuration.startup import AccountsStartUp
 from .core import middleware
 from .core.config import get_settings
-from .core.config.base import ApiSettings
+from .core.config.settings import Settings
 from .core.exceptions.errors import APIError
 from .core.exceptions.handlers import global_exception_handler
 from .core.utils.routing_helpers import collect_routers
@@ -17,7 +17,7 @@ class APIFactory:
     def __init__(self):
         self.app: FastAPI | None = None
 
-        self.settings: ApiSettings = get_settings()
+        self.settings: Settings = get_settings()
 
     def create_app(self) -> FastAPI:
         settings = self.settings

@@ -1,13 +1,7 @@
-from .accounts import AccountORM
-from .sessions import SessionORM
-
-# Aliases for backward compatibility with repositories
-AccountModel = AccountORM
-SessionModel = SessionORM
+from .accounts import AccountTable
+from .sessions import SessionTable
 
 __all__ = [
-    "AccountORM",
-    "SessionORM",
-    "AccountModel",
-    "SessionModel",
+    "AccountTable",
+    "SessionTable",
 ]

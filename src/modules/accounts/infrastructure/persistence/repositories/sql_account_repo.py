@@ -14,7 +14,7 @@ from .....accounts.domain.account.value_objects.hashed_password import HashedPas
 from .....accounts.domain.account.value_objects.session_id import SessionId
 from .....accounts.domain.interfaces.account_repository import BaseAccountRepository
 from ..exceptions import AccountRecordConflictError, AccountRecordNotFoundError
-from ..orm.models import AccountORM
+from ..orm.models import AccountTable
 
 
 class SQLBaseAccountRepository(BaseAccountRepository):
@@ -23,7 +23,7 @@ class SQLBaseAccountRepository(BaseAccountRepository):
     def __init__(self, db_session: AsyncSession) -> None:
         self._db_session = db_session
 
-    def _to_domain(self, record: AccountORM) -> Account:
+    def _to_domain(self, record: AccountTable) -> Account:
         id = AccountId.create(record.id)
         email = Email.create(record.email)
         password = HashedPassword.create(record.hashed_password)
@@ -51,7 +51,7 @@ class SQLBaseAccountRepository(BaseAccountRepository):
 
     # Interface implementation -------------------------------------------------
     async def add(self, account: Account) -> None:
-        record = AccountORM(
+        record = AccountTable(
             id=account.id.value,
             email=str(account.email),
             hashed_password=account.hashed_password.value,
@@ -66,7 +66,7 @@ class SQLBaseAccountRepository(BaseAccountRepository):
             raise AccountRecordConflictError(str(account.email))
 
     async def update(self, account: Account) -> None:
-        result = await self._db_session.execute(select(AccountORM).filter(AccountORM.id == account.id.value))
+        result = await self._db_session.execute(select(AccountTable).filter(AccountTable.id == account.id.value))
         db_account = result.scalars().first()
         if not db_account:
             raise AccountRecordNotFoundError(str(account.id.value))
@@ -78,36 +78,40 @@ class SQLBaseAccountRepository(BaseAccountRepository):
         db_account.roles = ",".join(r.value for r in account.roles)
 
     async def get_by_id(self, account_id: AccountId) -> Account | None:
-        stmt = select(AccountORM).options(selectinload(AccountORM.sessions)).filter(AccountORM.id == account_id.value)
+        stmt = (
+            select(AccountTable)
+            .options(selectinload(AccountTable.sessions))
+            .filter(AccountTable.id == account_id.value)
+        )
         result = await self._db_session.execute(stmt)
         record = result.scalars().first()
         return self._to_domain(record) if record else None
 
     async def get_by_email(self, email: str) -> Account | None:
-        stmt = select(AccountORM).options(selectinload(AccountORM.sessions)).filter(AccountORM.email == email)
+        stmt = select(AccountTable).options(selectinload(AccountTable.sessions)).filter(AccountTable.email == email)
         result = await self._db_session.execute(stmt)
         record = result.scalars().first()
         return self._to_domain(record) if record else None
 
     async def exists_by_email(self, email: str) -> bool:
-        stmt = select(AccountORM.id).filter(AccountORM.email == email)
+        stmt = select(AccountTable.id).filter(AccountTable.email == email)
         result = await self._db_session.execute(stmt)
         return result.first() is not None
 
     async def list_accounts(self, limit: int = 100, offset: int = 0) -> tuple[Iterable[Account], int]:
         # 1. Get total count
-        count_stmt = select(func.count()).select_from(AccountORM)
+        count_stmt = select(func.count()).select_from(AccountTable)
         total_result = await self._db_session.execute(count_stmt)
         total_count = total_result.scalar_one()
 
         # 2. Get paginated results
-        stmt = select(AccountORM).order_by(AccountORM.created_at.asc()).limit(limit).offset(offset)
+        stmt = select(AccountTable).order_by(AccountTable.created_at.asc()).limit(limit).offset(offset)
         result = await self._db_session.execute(stmt)
         records = result.scalars().all()
         return [self._to_domain(record) for record in records], total_count
 
     async def remove(self, account_id: AccountId) -> None:
-        stmt = select(AccountORM).filter(AccountORM.id == account_id.value)
+        stmt = select(AccountTable).filter(AccountTable.id == account_id.value)
         result = await self._db_session.execute(stmt)
         record = result.scalars().first()
         if record:

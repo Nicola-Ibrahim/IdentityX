@@ -14,6 +14,7 @@ from .import_helpers import extract_members_from_package
 PACKAGE_PATHS = [
     "src.api.routers.accounts.v1.accounts",
     "src.api.routers.accounts.v1.admin",
+    "src.api.routers.accounts.v1.discovery",
 ]
 
 

@@ -2,23 +2,25 @@ from typing import Callable
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ...domain.interfaces.unit_of_work import BaseUnitOfWork
+from ...domain.interfaces.uow import BaseAsyncUnitOfWork
 from .repositories.sql_account_repo import SQLBaseAccountRepository
 from .repositories.sql_session_repo import SQLBaseSessionRepository
 
 
-class SQLAlchemyUnitOfWork(BaseUnitOfWork):
+class SQLAlchemyUnitOfWork(BaseAsyncUnitOfWork):
     """SQLAlchemy implementation of the Unit of Work pattern."""
 
     def __init__(self, session_factory: Callable[[], AsyncSession]) -> None:
         self._session_factory = session_factory
         self._db_session: AsyncSession | None = None
+        self._accounts: SQLBaseAccountRepository | None = None
+        self._sessions: SQLBaseSessionRepository | None = None
 
     async def begin(self) -> None:
         """Start a new session and initialize repositories."""
         self._db_session = self._session_factory()
-        self.accounts = SQLBaseAccountRepository(self._db_session)
-        self.sessions = SQLBaseSessionRepository(self._db_session)
+        self._accounts = SQLBaseAccountRepository(self._db_session)
+        self._sessions = SQLBaseSessionRepository(self._db_session)
 
     async def commit(self) -> None:
         """Commit the current transaction."""
@@ -35,3 +37,17 @@ class SQLAlchemyUnitOfWork(BaseUnitOfWork):
         if self._db_session:
             await self._db_session.close()
             self._db_session = None
+            self._accounts = None
+            self._sessions = None
+
+    @property
+    def accounts(self) -> SQLBaseAccountRepository:
+        if self._accounts is None:
+            raise RuntimeError("Unit of Work not initialized. Call begin() or use as context manager.")
+        return self._accounts
+
+    @property
+    def sessions(self) -> SQLBaseSessionRepository:
+        if self._sessions is None:
+            raise RuntimeError("Unit of Work not initialized. Call begin() or use as context manager.")
+        return self._sessions

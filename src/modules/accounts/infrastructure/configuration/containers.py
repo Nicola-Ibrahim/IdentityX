@@ -1,6 +1,6 @@
 from dependency_injector import containers, providers
 
-from .....building_blocks.infrastructure.database import SQLAlchemySessionFactory, SQLAlchemySettings
+from .....database import SQLAlchemySessionFactory, SQLAlchemySettings
 from ...application.account.service import AccountService
 from ...application.authentication.service import AuthenticationService
 from ..crypto.jwt_token import JWTTokenService

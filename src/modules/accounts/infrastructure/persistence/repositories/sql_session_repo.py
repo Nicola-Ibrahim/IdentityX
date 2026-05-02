@@ -11,7 +11,7 @@ from .....accounts.domain.session.value_objects.refresh_token import RefreshToke
 from .....accounts.domain.session.value_objects.session_id import SessionId
 from .....accounts.domain.session.value_objects.session_status import SessionStatus
 from ..exceptions import SessionRecordNotFoundError
-from ..orm.models import SessionORM
+from ..orm.models import SessionTable
 
 
 class SQLBaseSessionRepository(BaseSessionRepository):
@@ -20,7 +20,7 @@ class SQLBaseSessionRepository(BaseSessionRepository):
     def __init__(self, db_session: AsyncSession) -> None:
         self._db_session = db_session
 
-    def _to_domain(self, record: SessionORM) -> Session:
+    def _to_domain(self, record: SessionTable) -> Session:
         account_id = AccountId.create(record.account.id)
         session_id = SessionId.create(record.id)
         refresh = RefreshToken.create(record.refresh_token)
@@ -37,37 +37,41 @@ class SQLBaseSessionRepository(BaseSessionRepository):
             updated_at=record.updated_at,
         )
 
-    async def add(self, session_domain: Session) -> None:
-        record = SessionORM(
-            id=session_domain.id.value,
-            account_id=session_domain.account_id.value,
-            refresh_token=session_domain.refresh_token.value,
-            expires_at=session_domain.expires_at,
-            is_active=session_domain.is_active,
-            is_revoked=session_domain.is_revoked,
+    async def add(self, session: Session) -> None:
+        record = SessionTable(
+            id=session.id.value,
+            account_id=session.account_id.value,
+            refresh_token=session.refresh_token.value,
+            expires_at=session.expires_at,
+            is_active=session.is_active,
+            is_revoked=session.is_revoked,
         )
         self._db_session.add(record)
 
-    async def update(self, session_domain: Session) -> None:
-        stmt = select(SessionORM).filter(SessionORM.id == session_domain.id.value)
+    async def update(self, session: Session) -> None:
+        stmt = select(SessionTable).filter(SessionTable.id == session.id.value)
         result = await self._db_session.execute(stmt)
         record = result.scalars().one_or_none()
         if not record:
-            raise SessionRecordNotFoundError(str(session_domain.id.value))
-        record.refresh_token = session_domain.refresh_token.value
-        record.expires_at = session_domain.expires_at
-        record.is_active = session_domain.is_active
-        record.is_revoked = session_domain.is_revoked
+            raise SessionRecordNotFoundError(str(session.id.value))
+        record.refresh_token = session.refresh_token.value
+        record.expires_at = session.expires_at
+        record.is_active = session.is_active
+        record.is_revoked = session.is_revoked
 
     async def get_by_id(self, session_id: SessionId) -> Session | None:
-        stmt = select(SessionORM).options(joinedload(SessionORM.account)).filter(SessionORM.id == session_id.value)
+        stmt = (
+            select(SessionTable).options(joinedload(SessionTable.account)).filter(SessionTable.id == session_id.value)
+        )
         result = await self._db_session.execute(stmt)
         record = result.scalars().one_or_none()
         return self._to_domain(record) if record else None
 
     async def get_by_refresh_token(self, token: RefreshToken) -> Session | None:
         stmt = (
-            select(SessionORM).options(joinedload(SessionORM.account)).filter(SessionORM.refresh_token == token.value)
+            select(SessionTable)
+            .options(joinedload(SessionTable.account))
+            .filter(SessionTable.refresh_token == token.value)
         )
         result = await self._db_session.execute(stmt)
         record = result.scalars().one_or_none()
@@ -75,9 +79,9 @@ class SQLBaseSessionRepository(BaseSessionRepository):
 
     async def list_for_account(self, account_id: AccountId) -> Iterable[Session]:
         stmt = (
-            select(SessionORM)
-            .options(joinedload(SessionORM.account))
-            .filter(SessionORM.account_id == account_id.value)
+            select(SessionTable)
+            .options(joinedload(SessionTable.account))
+            .filter(SessionTable.account_id == account_id.value)
         )
         result = await self._db_session.execute(stmt)
         records = result.scalars().all()
@@ -85,9 +89,9 @@ class SQLBaseSessionRepository(BaseSessionRepository):
 
     async def revoke_all_for_account(self, account_id: AccountId) -> None:
         stmt = (
-            update(SessionORM)
-            .where(SessionORM.account_id == account_id.value)
-            .where(SessionORM.is_active.is_(True))
+            update(SessionTable)
+            .where(SessionTable.account_id == account_id.value)
+            .where(SessionTable.is_active.is_(True))
             .values(is_active=False, is_revoked=True)
         )
         await self._session.execute(stmt)
