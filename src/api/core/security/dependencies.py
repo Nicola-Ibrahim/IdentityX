@@ -2,15 +2,15 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/accounts/token")
-
-from ....modules.accounts.application.interfaces.token_errors import (
+from src.modules.accounts.application.interfaces.token_errors import (
     TokenError,
     TokenExpiredError,
     TokenRevokedError,
 )
-from ....modules.accounts.infrastructure.configuration.containers import AccountsDIContainer
-from ....modules.accounts.application.authentication.service import AuthenticationService
+from src.modules.accounts.infrastructure.configuration.containers import AccountsDIContainer
+from src.modules.accounts.application.authentication.service import AuthenticationService
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/accounts/token")
 
 
 @inject

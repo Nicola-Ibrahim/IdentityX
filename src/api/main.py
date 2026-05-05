@@ -4,10 +4,9 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from ..modules.accounts.infrastructure.configuration.startup import AccountsStartUp
-from .core import middleware
 from .core.config import get_settings
-from .core.config.settings import Settings
+from ..startup import IdentityXStartUp
+from .core import middleware
 from .core.exceptions.errors import APIError
 from .core.exceptions.handlers import global_exception_handler
 from .core.utils.routing_helpers import collect_routers
@@ -17,39 +16,29 @@ class APIFactory:
     def __init__(self):
         self.app: FastAPI | None = None
 
-        self.settings: Settings = get_settings()
+        self.settings = get_settings()
 
     def create_app(self) -> FastAPI:
-        settings = self.settings
-        settings.configure()
+        self.settings.configure()
+        startup = IdentityXStartUp()
 
         @asynccontextmanager
         async def lifespan(app: FastAPI):
-            startups: list[object] = []
-            modules: dict[str, object] = {}
             try:
-                accounts = AccountsStartUp().initialize()
-                startups.append(accounts)
-                modules["accounts"] = accounts
-                app.state.backend_modules = modules
+                await startup.initialize()
+
+                app.state.startup = startup
+                # Keep compatibility with current app.state.backend_modules if needed
+                app.state.backend_modules = {"accounts": startup.accounts}
                 yield
             finally:
-                for startup in reversed(startups):
-                    try:
-                        await startup.stop()
-                    except Exception:
-                        pass
+                await startup.stop()
 
         self.app = FastAPI(
-            title=settings.PROJECT_NAME,
-            version=settings.VERSION,
-            description=settings.DESCRIPTION,
+            title=self.settings.PROJECT_NAME,
+            version=self.settings.VERSION,
+            description=self.settings.DESCRIPTION,
             lifespan=lifespan,
-            # docs_url=self.settings.DOCS_URL,
-            # redoc_url=self.settings.REDOC_URL,
-            # contact=self.settings.CONTACT_INFO,
-            # license_info=self.settings.LICENSE_INFO,
-            # openapi_url=self.settings.OPENAPI_URL,
         )
 
         self._configure_middleware()

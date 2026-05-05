@@ -1,37 +1,35 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
-from .exceptions import BusinessRuleValidationException
-from .rule import BaseBusinessRule
+if TYPE_CHECKING:
+    from .rule import BaseBusinessRule
 
 
 class ValueObject(ABC, BaseModel):
-    """Abstract base class for value objects."""
+    """
+    Abstract base class for all Value Objects.
+    Uses Pydantic V2 for validation and immutability.
+    """
 
-    def __eq__(self, other: Any) -> bool:
-        """Check equality based on the value object properties."""
-        if not isinstance(other, ValueObject):
-            return False
-        return self.__dict__ == other.__dict__
+    # Force immutability and allow hashing for use in sets/dicts
+    model_config = ConfigDict(frozen=True)
 
-    def __hash__(self) -> int:
-        """Return the hash of the value object."""
-        return hash(tuple(sorted(self.__dict__.items())))
-
-    def __str__(self) -> str:
-        """Return the string representation of the value object."""
-        return str(self.__dict__)
-
-    def check_rules(self, *rules: BaseBusinessRule) -> None:
-        """Ensure that the supplied business rules hold true."""
-        for rule in rules:
-            if rule.is_broken():
-                raise BusinessRuleValidationException(rule)
+    def __composite_values__(self) -> tuple[Any, ...]:
+        """Standard hook for SQLAlchemy composite columns."""
+        return tuple(self.__dict__.values())
 
     @classmethod
     @abstractmethod
-    def create(cls, *args, **kwargs) -> "ValueObject":
-        """Abstract method for creating the value object, enforcing rule validation."""
+    def create(cls, *args, **kwargs) -> Any:
+        """Factory method to enforce business rules during creation."""
         raise NotImplementedError
+
+    def check_rules(self, *rules: "BaseBusinessRule") -> None:
+        """Ensure that the supplied business rules hold true."""
+        from .exceptions import BusinessRuleValidationException
+
+        for rule in rules:
+            if rule.is_broken():
+                raise BusinessRuleValidationException(rule)

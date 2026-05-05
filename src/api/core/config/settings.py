@@ -94,7 +94,7 @@ class Settings(BaseSettings):
         # Optional JSON Handler
         if self.LOG_USE_JSON:
             try:
-                from pythonjsonlogger.jsonlogger import JsonFormatter
+                import pythonjsonlogger.jsonlogger  # noqa: F401
 
                 formatters["json"] = {
                     "()": "pythonjsonlogger.jsonlogger.JsonFormatter",

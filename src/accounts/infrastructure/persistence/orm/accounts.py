@@ -1,0 +1,43 @@
+from typing import TYPE_CHECKING, List
+
+from sqlalchemy import Boolean, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from .....buckets.database.table import BaseSQLTable
+
+if TYPE_CHECKING:
+    from .external_identities import ExternalIdentityTable
+    from .sessions import SessionTable
+
+
+class AccountTable(BaseSQLTable):
+    """
+    SQLAlchemy model for the 'accounts' table.
+    Maps directly to the Account Aggregate Root.
+    """
+
+    __tablename__ = "accounts"
+
+    # Credentials
+    email: Mapped[str] = mapped_column(String(320), unique=True, nullable=False, index=True)
+    hashed_password: Mapped[str | None] = mapped_column(String(512), nullable=True)
+
+    # Status (Flattened from AccountStatus value object)
+    is_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    # Permissions
+    roles: Mapped[str] = mapped_column(String(256), nullable=False, default="user")
+
+    # Audit fields are inherited from BaseSQLTable (id, created_at, updated_at)
+
+    # Relationships
+    sessions: Mapped[List["SessionTable"]] = relationship(
+        "SessionTable", back_populates="account", cascade="all, delete-orphan"
+    )
+    external_identities: Mapped[List["ExternalIdentityTable"]] = relationship(
+        "ExternalIdentityTable", back_populates="account", cascade="all, delete-orphan"
+    )
+
+    def __repr__(self) -> str:
+        return f"<Account(id={self.id}, email={self.email}, active={self.is_active})>"

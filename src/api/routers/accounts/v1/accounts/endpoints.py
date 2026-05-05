@@ -1,17 +1,17 @@
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 
+from src.api.core.responses.success import APIResponse, ResponseEnvelope
+from fastapi_limiter.depends import RateLimiter
+from pyrate_limiter import Duration, Limiter, Rate
+from src.api.core.security.dependencies import get_current_account_id
 from src.modules.accounts.application.account.dto import AccountDTO
 from src.modules.accounts.application.account.service import AccountService
 from src.modules.accounts.application.authentication.issue_token_pair_dto import IssuedTokenPairDTO
 from src.modules.accounts.application.authentication.service import AuthenticationService
 from src.modules.accounts.infrastructure.configuration.containers import AccountsDIContainer
 
-from .....core.responses.success import APIResponse, ResponseEnvelope
-from .....core.security.dependencies import get_current_account_id
-from .logout_request import LogoutRequest
-from .refresh_token_request import RefreshTokenRequest
 from .register_account_request import RegisterAccountRequest
 from .update_account_request import UpdateAccountRequest
 
@@ -27,6 +27,7 @@ def raise_http(e):
     status_code=status.HTTP_201_CREATED,
     response_model=ResponseEnvelope[AccountDTO],
     summary="Register a new account",
+    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(5, Duration.SECOND * 60))))],
 )
 @inject
 async def register_account(
@@ -47,6 +48,7 @@ async def register_account(
     "/verify/{account_id}",
     response_model=ResponseEnvelope[AccountDTO],
     summary="Verify an account",
+    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(5, Duration.SECOND * 60))))],
 )
 @inject
 async def verify_account(
@@ -67,16 +69,31 @@ async def verify_account(
     "/token",
     response_model=ResponseEnvelope[IssuedTokenPairDTO],
     summary="OAuth2 compatible token login",
+    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(5, Duration.SECOND * 60))))],
 )
 @inject
 async def login_for_access_token(
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     auth_service: AuthenticationService = Depends(Provide[AccountsDIContainer.authentication_service]),
 ) -> APIResponse:
     result = await auth_service.authenticate(form_data.username, form_data.password)
+
+    if result.is_success:
+        dto = result.value
+        # Set Refresh Token in a secure, HttpOnly cookie
+        response.set_cookie(
+            key="refresh_token",
+            value=dto.refresh_token,
+            httponly=True,
+            secure=True,  # Set to True in production
+            samesite="lax",
+            max_age=30 * 24 * 60 * 60,  # 30 days
+        )
+
     return result.match(
         on_success=lambda dto: APIResponse(
-            data=dto.model_dump(),
+            data=dto.model_dump(exclude={"refresh_token"}),
             status_code=status.HTTP_200_OK,
         ),
         on_failure=raise_http,
@@ -87,16 +104,36 @@ async def login_for_access_token(
     "/token/refresh",
     response_model=ResponseEnvelope[IssuedTokenPairDTO],
     summary="Refresh access token",
+    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(10, Duration.SECOND * 60))))],
 )
 @inject
 async def refresh_token(
-    payload: RefreshTokenRequest,
+    response: Response,
+    refresh_token: str | None = Cookie(None),
     auth_service: AuthenticationService = Depends(Provide[AccountsDIContainer.authentication_service]),
 ) -> APIResponse:
-    result = await auth_service.refresh_session(payload.refresh_token)
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token missing",
+        )
+
+    result = await auth_service.refresh_session(refresh_token)
+
+    if result.is_success:
+        dto = result.value
+        response.set_cookie(
+            key="refresh_token",
+            value=dto.refresh_token,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            max_age=30 * 24 * 60 * 60,
+        )
+
     return result.match(
         on_success=lambda dto: APIResponse(
-            data=dto.model_dump(),
+            data=dto.model_dump(exclude={"refresh_token"}),
             status_code=status.HTTP_200_OK,
         ),
         on_failure=raise_http,
@@ -105,17 +142,24 @@ async def refresh_token(
 
 @router.post(
     "/logout",
-    status_code=status.HTTP_204_NO_CONTENT,
+    status_code=status.HTTP_200_OK,
     summary="Logout and revoke refresh token",
+    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(10, Duration.SECOND * 60))))],
 )
 @inject
 async def logout(
-    payload: LogoutRequest,
-    _: str = Depends(get_current_account_id),
+    response: Response,
+    refresh_token: str | None = Cookie(None),
     auth_service: AuthenticationService = Depends(Provide[AccountsDIContainer.authentication_service]),
-) -> None:
-    result = await auth_service.logout(payload.refresh_token)
-    result.match(on_success=lambda _: None, on_failure=raise_http)
+) -> APIResponse:
+    if refresh_token:
+        await auth_service.logout(refresh_token)
+        response.delete_cookie("refresh_token")
+
+    return APIResponse(
+        data={"message": "Logged out successfully"},
+        status_code=status.HTTP_200_OK,
+    )
 
 
 @router.get(
