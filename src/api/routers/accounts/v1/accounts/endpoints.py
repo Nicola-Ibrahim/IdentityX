@@ -6,14 +6,19 @@ from src.api.core.responses.success import APIResponse, ResponseEnvelope
 from fastapi_limiter.depends import RateLimiter
 from pyrate_limiter import Duration, Limiter, Rate
 from src.api.core.security.dependencies import get_current_account_id
-from src.modules.accounts.application.account.dto import AccountDTO
-from src.modules.accounts.application.account.service import AccountService
-from src.modules.accounts.application.authentication.issue_token_pair_dto import IssuedTokenPairDTO
-from src.modules.accounts.application.authentication.service import AuthenticationService
-from src.modules.accounts.infrastructure.configuration.containers import AccountsDIContainer
+from src.accounts.application.account.dto import AccountDTO
+from src.accounts.application.account.service import AccountService
+from src.accounts.application.authentication.issue_token_pair_dto import IssuedTokenPairDTO
+from src.accounts.application.authentication.service import AuthenticationService
+from src.accounts.application.authentication.social_service import SocialAuthenticationService
+from src.accounts.application.authentication.mfa_dto import MfaChallengeDTO, MfaSetupDTO
+from src.accounts.infrastructure.configuration.containers import AccountsDIContainer
 
 from .register_account_request import RegisterAccountRequest
 from .update_account_request import UpdateAccountRequest
+from .mfa_requests import MfaSetupRequest, MfaEnableRequest, MfaVerifyRequest
+from fastapi import Request
+import hashlib
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
 
@@ -67,19 +72,33 @@ async def verify_account(
 
 @router.post(
     "/token",
-    response_model=ResponseEnvelope[IssuedTokenPairDTO],
+    response_model=ResponseEnvelope[IssuedTokenPairDTO | MfaChallengeDTO],
     summary="OAuth2 compatible token login",
     dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(5, Duration.SECOND * 60))))],
 )
 @inject
 async def login_for_access_token(
+    request: Request,
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     auth_service: AuthenticationService = Depends(Provide[AccountsDIContainer.authentication_service]),
 ) -> APIResponse:
-    result = await auth_service.authenticate(form_data.username, form_data.password)
+    ip_address = request.client.host if request.client else "unknown"
+    user_agent = request.headers.get("user-agent", "unknown")
+    
+    # Hash the trusted device token from cookie if it exists
+    device_token = request.cookies.get("trusted_device")
+    device_hash = hashlib.sha256(device_token.encode()).hexdigest() if device_token else None
+    
+    result = await auth_service.authenticate(
+        form_data.username, 
+        form_data.password,
+        ip_address=ip_address,
+        user_agent=user_agent,
+        device_hash=device_hash
+    )
 
-    if result.is_success:
+    if result.is_success and isinstance(result.value, IssuedTokenPairDTO):
         dto = result.value
         # Set Refresh Token in a secure, HttpOnly cookie
         response.set_cookie(
@@ -93,7 +112,7 @@ async def login_for_access_token(
 
     return result.match(
         on_success=lambda dto: APIResponse(
-            data=dto.model_dump(exclude={"refresh_token"}),
+            data=dto.model_dump(exclude={"refresh_token"}) if isinstance(dto, IssuedTokenPairDTO) else dto.model_dump(),
             status_code=status.HTTP_200_OK,
         ),
         on_failure=raise_http,
@@ -130,6 +149,16 @@ async def refresh_token(
             samesite="lax",
             max_age=30 * 24 * 60 * 60,
         )
+
+        if dto.trusted_device_token:
+            response.set_cookie(
+                key="trusted_device",
+                value=dto.trusted_device_token,
+                httponly=True,
+                secure=True,
+                samesite="lax",
+                max_age=30 * 24 * 60 * 60,
+            )
 
     return result.match(
         on_success=lambda dto: APIResponse(
@@ -197,6 +226,178 @@ async def update_account(
     return result.match(
         on_success=lambda dto: APIResponse(
             data=dto.model_dump(),
+            status_code=status.HTTP_200_OK,
+        ),
+        on_failure=raise_http,
+    )
+
+@router.post(
+    "/mfa/setup",
+    response_model=ResponseEnvelope[MfaSetupDTO],
+    summary="Initiate MFA setup",
+)
+@inject
+async def setup_mfa(
+    payload: MfaSetupRequest,
+    auth_service: AuthenticationService = Depends(Provide[AccountsDIContainer.authentication_service]),
+) -> APIResponse:
+    result = await auth_service.setup_mfa(payload.mfa_token)
+    return result.match(
+        on_success=lambda dto: APIResponse(data=dto.model_dump(), status_code=status.HTTP_200_OK),
+        on_failure=raise_http,
+    )
+
+
+@router.post(
+    "/mfa/enable",
+    response_model=ResponseEnvelope[IssuedTokenPairDTO],
+    summary="Verify and enable MFA",
+)
+@inject
+async def enable_mfa(
+    request: Request,
+    response: Response,
+    payload: MfaEnableRequest,
+    auth_service: AuthenticationService = Depends(Provide[AccountsDIContainer.authentication_service]),
+) -> APIResponse:
+    ip_address = request.client.host if request.client else "unknown"
+    user_agent = request.headers.get("user-agent", "unknown")
+
+    result = await auth_service.verify_and_enable_mfa(
+        payload.mfa_token,
+        payload.totp_code,
+        payload.secret,
+        payload.recovery_codes,
+        ip_address=ip_address,
+        user_agent=user_agent
+    )
+
+    if result.is_success:
+        dto = result.value
+        response.set_cookie(
+            key="refresh_token",
+            value=dto.refresh_token,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            max_age=30 * 24 * 60 * 60,
+        )
+
+    return result.match(
+        on_success=lambda dto: APIResponse(
+            data=dto.model_dump(exclude={"refresh_token"}),
+            status_code=status.HTTP_200_OK,
+        ),
+        on_failure=raise_http,
+    )
+
+
+@router.post(
+    "/token/mfa",
+    response_model=ResponseEnvelope[IssuedTokenPairDTO],
+    summary="Verify TOTP and issue tokens",
+)
+@inject
+async def login_mfa(
+    request: Request,
+    response: Response,
+    payload: MfaVerifyRequest,
+    auth_service: AuthenticationService = Depends(Provide[AccountsDIContainer.authentication_service]),
+) -> APIResponse:
+    ip_address = request.client.host if request.client else "unknown"
+    user_agent = request.headers.get("user-agent", "unknown")
+
+    result = await auth_service.authenticate_mfa(
+        mfa_token=payload.mfa_token,
+        totp_code=payload.totp_code,
+        recovery_code=payload.recovery_code,
+        ip_address=ip_address,
+        user_agent=user_agent,
+        trust_device=payload.trust_device
+    )
+
+    if result.is_success:
+        dto = result.value
+        response.set_cookie(
+            key="refresh_token",
+            value=dto.refresh_token,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            max_age=30 * 24 * 60 * 60,
+        )
+
+    return result.match(
+        on_success=lambda dto: APIResponse(
+            data=dto.model_dump(exclude={"refresh_token"}),
+            status_code=status.HTTP_200_OK,
+        ),
+        on_failure=raise_http,
+    )
+
+@router.get(
+    "/google/login",
+    summary="Get Google OAuth2 Login URL",
+)
+@inject
+async def google_login(
+    auth_service: AuthenticationService = Depends(Provide[AccountsDIContainer.authentication_service]),
+) -> APIResponse:
+    # In a real app, this would be generated by authlib and include state for CSRF
+    # For this demo, we return the URL manually
+    from src.accounts.infrastructure.configuration.settings import AccountsSettings
+    settings = AccountsSettings()
+    
+    login_url = (
+        "https://accounts.google.com/o/oauth2/v2/auth"
+        "?response_type=code"
+        f"&client_id={settings.GOOGLE_CLIENT_ID}"
+        f"&redirect_uri={settings.GOOGLE_REDIRECT_URI}"
+        "&scope=openid%20email%20profile"
+    )
+    
+    return APIResponse(data={"url": login_url}, status_code=status.HTTP_200_OK)
+
+
+@router.get(
+    "/google/callback",
+    response_model=ResponseEnvelope[IssuedTokenPairDTO],
+    summary="Google OAuth2 Callback",
+)
+@inject
+async def google_callback(
+    request: Request,
+    response: Response,
+    code: str,
+    social_service: SocialAuthenticationService = Depends(Provide[AccountsDIContainer.social_authentication_service]),
+) -> APIResponse:
+    ip_address = request.client.host if request.client else "unknown"
+    user_agent = request.headers.get("user-agent", "unknown")
+    
+    from src.accounts.infrastructure.configuration.settings import AccountsSettings
+    settings = AccountsSettings()
+    
+    result = await social_service.authenticate_with_google(
+        code=code,
+        redirect_uri=settings.GOOGLE_REDIRECT_URI,
+        ip_address=ip_address,
+        user_agent=user_agent
+    )
+    
+    if result.is_success:
+        dto = result.value
+        response.set_cookie(
+            key="refresh_token",
+            value=dto.refresh_token,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            max_age=30 * 24 * 60 * 60,
+        )
+
+    return result.match(
+        on_success=lambda dto: APIResponse(
+            data=dto.model_dump(exclude={"refresh_token"}),
             status_code=status.HTTP_200_OK,
         ),
         on_failure=raise_http,

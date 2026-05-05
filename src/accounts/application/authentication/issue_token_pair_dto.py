@@ -6,3 +6,4 @@ class IssuedTokenPairDTO(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
     expires_in: int = 900  # access token TTL in seconds
+    trusted_device_token: str | None = None

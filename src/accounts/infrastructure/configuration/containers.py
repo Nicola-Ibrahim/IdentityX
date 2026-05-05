@@ -2,7 +2,9 @@ from dependency_injector import containers, providers
 from .settings import AccountsSettings
 
 from ...application.account.service import AccountService
+from ...application.audit.service import AuditService
 from ...application.authentication.service import AuthenticationService
+from ...application.authentication.social_service import SocialAuthenticationService
 from ..crypto.jwt_token import JWTTokenService
 from ..crypto.password_hasher import PBKDF2PasswordHasher
 from ..messaging.email_notifier import ConsoleNotificationService
@@ -43,12 +45,18 @@ class AccountsDIContainer(containers.DeclarativeContainer):
         session_factory=session_factory,
     )
 
+    _audit_service = providers.Factory(
+        AuditService,
+        uow=_unit_of_work,
+    )
+
     # -- Application Services (Exposed) --
     account_service = providers.Factory(
         AccountService,
         uow=_unit_of_work,
         password_hasher=_password_hasher,
         notification_service=_notification_service,
+        audit_service=_audit_service,
     )
 
     authentication_service = providers.Factory(
@@ -56,4 +64,15 @@ class AccountsDIContainer(containers.DeclarativeContainer):
         uow=_unit_of_work,
         password_hasher=_password_hasher,
         token_service=_token_service,
+        audit_service=_audit_service,
+    )
+
+    social_authentication_service = providers.Factory(
+        SocialAuthenticationService,
+        uow=_unit_of_work,
+        auth_service=authentication_service,
+        audit_service=_audit_service,
+        client_id=settings.provided.GOOGLE_CLIENT_ID,
+        client_secret=settings.provided.GOOGLE_CLIENT_SECRET,
+        server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
     )

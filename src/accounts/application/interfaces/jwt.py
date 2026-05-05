@@ -51,6 +51,16 @@ class TokenService(ABC):
         pass
 
     @abstractmethod
+    def create_mfa_token(self, claims: TokenPayload) -> str:
+        """Issue a short-lived JWT with typ='mfa'."""
+        pass
+
+    @abstractmethod
+    def validate_mfa_token(self, token: str) -> ValidatedClaims:
+        """Validate an MFA token and return claims."""
+        pass
+
+    @abstractmethod
     def get_public_key_jwk(self) -> dict:
         """Return the public key in JSON Web Key format."""
         pass

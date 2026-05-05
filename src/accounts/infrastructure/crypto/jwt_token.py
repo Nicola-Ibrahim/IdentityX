@@ -29,6 +29,7 @@ class JWTTokenService(TokenService):
         self._issuer = issuer
         self._access_token_ttl = timedelta(minutes=access_token_ttl_minutes)
         self._refresh_token_ttl = timedelta(days=refresh_token_ttl_days)
+        self._mfa_token_ttl = timedelta(minutes=5)
 
     def create_tokens(self, claims: TokenPayload) -> tuple[str, str]:
         now = datetime.now(timezone.utc)
@@ -71,6 +72,24 @@ class JWTTokenService(TokenService):
         claims = self.validate(token)
         if claims.typ != "refresh":
             raise TokenInvalidError(f"Token type mismatch: expected refresh, got {claims.typ}")
+        return claims
+
+    def create_mfa_token(self, claims: TokenPayload) -> str:
+        now = datetime.now(timezone.utc)
+        payload = {
+            **claims.model_dump(exclude_none=True),
+            "iat": now,
+            "exp": now + self._mfa_token_ttl,
+            "jti": str(uuid.uuid4()),
+            "iss": self._issuer,
+            "typ": "mfa",
+        }
+        return jwt.encode(payload, self._private_key, algorithm=self._algorithm)
+
+    def validate_mfa_token(self, token: str) -> ValidatedClaims:
+        claims = self.validate(token)
+        if claims.typ != "mfa":
+            raise TokenInvalidError(f"Token type mismatch: expected mfa, got {claims.typ}")
         return claims
 
     def validate(self, token: str) -> ValidatedClaims:

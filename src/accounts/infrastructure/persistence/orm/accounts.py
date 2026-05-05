@@ -8,6 +8,7 @@ from .....buckets.database.table import BaseSQLTable
 if TYPE_CHECKING:
     from .external_identities import ExternalIdentityTable
     from .sessions import SessionTable
+    from .trusted_devices import TrustedDeviceTable
 
 
 class AccountTable(BaseSQLTable):
@@ -29,6 +30,11 @@ class AccountTable(BaseSQLTable):
     # Permissions
     roles: Mapped[str] = mapped_column(String(256), nullable=False, default="user")
 
+    # MFA
+    mfa_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    mfa_secret: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    mfa_recovery_codes: Mapped[str | None] = mapped_column(String, nullable=True)  # comma-separated hashed codes
+
     # Audit fields are inherited from BaseSQLTable (id, created_at, updated_at)
 
     # Relationships
@@ -37,6 +43,9 @@ class AccountTable(BaseSQLTable):
     )
     external_identities: Mapped[List["ExternalIdentityTable"]] = relationship(
         "ExternalIdentityTable", back_populates="account", cascade="all, delete-orphan"
+    )
+    trusted_devices: Mapped[List["TrustedDeviceTable"]] = relationship(
+        "TrustedDeviceTable", back_populates="account", cascade="all, delete-orphan", lazy="selectin"
     )
 
     def __repr__(self) -> str:

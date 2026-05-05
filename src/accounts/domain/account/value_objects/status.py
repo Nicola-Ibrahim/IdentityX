@@ -3,7 +3,7 @@ from typing import Self
 from .....building_blocks.domain.value_object import ValueObject
 
 
-class AccountStatus(ValueObject):
+class Status(ValueObject):
     is_verified: bool = False
     is_active: bool = True
 
@@ -11,11 +11,14 @@ class AccountStatus(ValueObject):
     def create(cls, is_verified: bool = False, is_active: bool = True) -> Self:
         return cls(is_verified=is_verified, is_active=is_active)
 
-    def mark_verified(self) -> Self:
-        return AccountStatus(is_verified=True, is_active=self.is_active)
+    def verify(self) -> Self:
+        return Status(is_verified=True, is_active=self.is_active)
 
     def activate(self) -> Self:
-        return AccountStatus(is_verified=self.is_verified, is_active=True)
+        return Status(is_verified=self.is_verified, is_active=True)
 
     def deactivate(self) -> Self:
-        return AccountStatus(is_verified=self.is_verified, is_active=False)
+        return Status(is_verified=self.is_verified, is_active=False)
+
+    def suspend(self) -> Self:
+        return self.deactivate()

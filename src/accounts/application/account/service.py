@@ -8,6 +8,7 @@ from ...domain.account.value_objects.email import Email
 from ...domain.account.value_objects.hashed_password import HashedPassword
 from ...domain.account.value_objects.password import Password
 from ...domain.interfaces.uow import BaseAsyncUnitOfWork
+from ..audit.service import AuditService
 from ..interfaces.notification_service import BaseNotificationService
 from ..interfaces.password_hasher import BasePasswordHasher
 from .dto import AccountDTO
@@ -19,10 +20,12 @@ class AccountService:
         uow: BaseAsyncUnitOfWork,
         password_hasher: BasePasswordHasher,
         notification_service: BaseNotificationService,
+        audit_service: AuditService,
     ) -> None:
         self.uow = uow
         self._password_hasher = password_hasher
         self._notifications = notification_service
+        self._audit = audit_service
 
     @Result.capture
     @transactional

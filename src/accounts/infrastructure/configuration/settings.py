@@ -30,3 +30,14 @@ class AccountsSettings(BaseSettings):
     JWT_ISSUER: str = Field(..., description="JWT issuer claim", examples=["identityx"])
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(..., description="Access token TTL", examples=[15, 60])
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = Field(..., description="Refresh token TTL", examples=[7, 30])
+
+    # Google OAuth2
+    GOOGLE_CLIENT_ID: str = Field(..., description="Google OAuth2 Client ID")
+    GOOGLE_CLIENT_SECRET: str = Field(..., description="Google OAuth2 Client Secret")
+    GOOGLE_REDIRECT_URI: str = Field(..., description="Google OAuth2 Redirect URI")
+
+    # MFA
+    MFA_ISSUER_NAME: str = Field(default="IdentityX", description="MFA Issuer Name")
+
+    # Trusted Devices
+    TRUSTED_DEVICE_TTL_DAYS: int = Field(default=30, description="Trusted Device TTL in days")
