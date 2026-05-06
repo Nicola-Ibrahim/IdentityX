@@ -1,5 +1,5 @@
-import uuid
 import hashlib
+import uuid
 from datetime import datetime, timedelta, timezone
 
 from ....buckets.database.decorators import transactional
@@ -47,20 +47,40 @@ class AuthenticationService:
         account = await self.uow.accounts.get_by_email(str(Email.create(email)))
 
         if not account:
-            await self._audit.log(AuditAction.LOGIN_FAILED, ip_address, user_agent, details={"email": email, "reason": "user_not_found"})
+            await self._audit.log(
+                AuditAction.LOGIN_FAILED, ip_address, user_agent, details={"email": email, "reason": "user_not_found"}
+            )
             raise ValueError("Invalid credentials")
 
         if not self._hasher.verify(password, account.password.value if account.password else ""):
-            await self._audit.log(AuditAction.LOGIN_FAILED, ip_address, user_agent, account_id=str(account.id.value), details={"reason": "invalid_password"})
+            await self._audit.log(
+                AuditAction.LOGIN_FAILED,
+                ip_address,
+                user_agent,
+                account_id=str(account.id.value),
+                details={"reason": "invalid_password"},
+            )
             raise ValueError("Invalid credentials")
 
         if not account.can_login():
-            await self._audit.log(AuditAction.LOGIN_FAILED, ip_address, user_agent, account_id=str(account.id.value), details={"reason": "account_inactive_or_unverified"})
+            await self._audit.log(
+                AuditAction.LOGIN_FAILED,
+                ip_address,
+                user_agent,
+                account_id=str(account.id.value),
+                details={"reason": "account_inactive_or_unverified"},
+            )
             raise ValueError("Account not active or verified")
 
         # Check for trusted device (Phase 4 logic)
         if device_hash and account.is_device_trusted(device_hash):
-            await self._audit.log(AuditAction.LOGIN_SUCCESS, ip_address, user_agent, account_id=str(account.id.value), details={"trusted_device": True})
+            await self._audit.log(
+                AuditAction.LOGIN_SUCCESS,
+                ip_address,
+                user_agent,
+                account_id=str(account.id.value),
+                details={"trusted_device": True},
+            )
             return await self._issue_session(account, ip_address, user_agent)
 
         # Mandatory MFA check
@@ -70,17 +90,10 @@ class AuthenticationService:
         log_action = AuditAction.MFA_REQUIRED if account.mfa.enabled else AuditAction.MFA_SETUP_INITIATED
         await self._audit.log(log_action, ip_address, user_agent, account_id=str(account.id.value))
 
-        return MfaChallengeDTO(
-            mfa_token=mfa_token,
-            mfa_setup_required=not account.mfa.enabled
-        )
+        return MfaChallengeDTO(mfa_token=mfa_token, mfa_setup_required=not account.mfa.enabled)
 
     async def _issue_session(
-        self,
-        account: Any,
-        ip_address: str,
-        user_agent: str,
-        action: AuditAction = AuditAction.LOGIN_SUCCESS
+        self, account: Any, ip_address: str, user_agent: str, action: AuditAction = AuditAction.LOGIN_SUCCESS
     ) -> IssuedTokenPairDTO:
         """Internal helper to issue a session and tokens."""
         session_id = SessionId.create()
@@ -203,6 +216,7 @@ class AuthenticationService:
     async def setup_mfa(self, mfa_token: str) -> MfaSetupDTO:
         """Generate a new MFA secret and provisioning URI."""
         import pyotp
+
         claims = self._token_service.validate_mfa_token(mfa_token)
         account = await self.uow.accounts.get_by_id(AccountId.create(uuid.UUID(claims.sub)))
         if not account:
@@ -215,25 +229,16 @@ class AuthenticationService:
         # In a real app, we'd pre-generate recovery codes here too
         recovery_codes = [str(uuid.uuid4())[:8] for _ in range(8)]
 
-        return MfaSetupDTO(
-            secret=secret,
-            provisioning_uri=provisioning_uri,
-            recovery_codes=recovery_codes
-        )
+        return MfaSetupDTO(secret=secret, provisioning_uri=provisioning_uri, recovery_codes=recovery_codes)
 
     @Result.capture
     @transactional
     async def verify_and_enable_mfa(
-        self,
-        mfa_token: str,
-        totp_code: str,
-        secret: str,
-        recovery_codes: list[str],
-        ip_address: str,
-        user_agent: str
+        self, mfa_token: str, totp_code: str, secret: str, recovery_codes: list[str], ip_address: str, user_agent: str
     ) -> IssuedTokenPairDTO:
         """Verify the first TOTP code and enable MFA for the account."""
         import pyotp
+
         claims = self._token_service.validate_mfa_token(mfa_token)
         account = await self.uow.accounts.get_by_id(AccountId.create(uuid.UUID(claims.sub)))
         if not account:
@@ -241,7 +246,13 @@ class AuthenticationService:
 
         totp = pyotp.TOTP(secret)
         if not totp.verify(totp_code):
-            await self._audit.log(AuditAction.MFA_FAILED, ip_address, user_agent, account_id=str(account.id.value), details={"reason": "invalid_totp_during_setup"})
+            await self._audit.log(
+                AuditAction.MFA_FAILED,
+                ip_address,
+                user_agent,
+                account_id=str(account.id.value),
+                details={"reason": "invalid_totp_during_setup"},
+            )
             raise ValueError("Invalid TOTP code")
 
         # Hashing recovery codes before saving is best practice
@@ -262,10 +273,11 @@ class AuthenticationService:
         user_agent: str,
         totp_code: str | None = None,
         recovery_code: str | None = None,
-        trust_device: bool = False
+        trust_device: bool = False,
     ) -> IssuedTokenPairDTO:
         """Verify TOTP code and issue final tokens."""
         import pyotp
+
         claims = self._token_service.validate_mfa_token(mfa_token)
         account = await self.uow.accounts.get_by_id(AccountId.create(uuid.UUID(claims.sub)))
         if not account:
@@ -279,18 +291,30 @@ class AuthenticationService:
         if recovery_code:
             mfa_verified = account.consume_recovery_code(recovery_code)
             if not mfa_verified:
-                await self._audit.log(AuditAction.MFA_FAILED, ip_address, user_agent, account_id=str(account.id.value), details={"reason": "invalid_recovery_code"})
+                await self._audit.log(
+                    AuditAction.MFA_FAILED,
+                    ip_address,
+                    user_agent,
+                    account_id=str(account.id.value),
+                    details={"reason": "invalid_recovery_code"},
+                )
                 raise ValueError("invalid_recovery_code")
-        
+
         # Then try TOTP
         elif totp_code:
             totp = pyotp.TOTP(account.mfa.secret)
             if totp.verify(totp_code):
                 mfa_verified = True
             else:
-                await self._audit.log(AuditAction.MFA_FAILED, ip_address, user_agent, account_id=str(account.id.value), details={"reason": "invalid_totp"})
+                await self._audit.log(
+                    AuditAction.MFA_FAILED,
+                    ip_address,
+                    user_agent,
+                    account_id=str(account.id.value),
+                    details={"reason": "invalid_totp"},
+                )
                 raise ValueError("invalid_totp")
-        
+
         else:
             raise ValueError("Either TOTP code or recovery code must be provided")
 
@@ -303,14 +327,16 @@ class AuthenticationService:
             device_hash = hashlib.sha256(new_device_token.encode()).hexdigest()
             account.trust_device(device_hash, user_agent, ip_address)
             await self.uow.accounts.update(account)
-            await self._audit.log(AuditAction.TRUSTED_DEVICE_ADDED, ip_address, user_agent, account_id=str(account.id.value))
+            await self._audit.log(
+                AuditAction.TRUSTED_DEVICE_ADDED, ip_address, user_agent, account_id=str(account.id.value)
+            )
 
         dto = await self._issue_session(account, ip_address, user_agent, action=AuditAction.LOGIN_SUCCESS)
-        
+
         # We attach the raw token to the DTO so the API can set it as a cookie
         # We'll need to extend IssuedTokenPairDTO or return it separately.
         # For simplicity, we'll return a tuple or just update the DTO.
         if new_device_token:
             dto.trusted_device_token = new_device_token
-            
+
         return dto

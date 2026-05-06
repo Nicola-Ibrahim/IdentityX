@@ -2,14 +2,19 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from src.api.core.utils.pagination import PaginationParams, get_pagination
-from src.modules.accounts.application.account.dto import AccountDTO
-from src.modules.accounts.application.account.service import AccountService
-from src.modules.accounts.application.authentication.service import AuthenticationService
-from src.modules.accounts.infrastructure.configuration.containers import AccountsDIContainer
+from src.api.core.security.dependencies import get_current_account_id
+from src.accounts.application.account.dto import AccountDTO
+from src.accounts.application.account.service import AccountService
+from src.accounts.application.authentication.service import AuthenticationService
+from src.accounts.infrastructure.configuration.containers import AccountsDIContainer
 
 from ..core.responses.success import APIResponse, ResponseEnvelope
 
-admin_router = APIRouter(prefix="/admin/accounts", tags=["admin-accounts"])
+admin_router = APIRouter(
+    prefix="/admin/accounts", 
+    tags=["admin-accounts"],
+    dependencies=[Depends(get_current_account_id)]
+)
 
 
 def raise_http(e):

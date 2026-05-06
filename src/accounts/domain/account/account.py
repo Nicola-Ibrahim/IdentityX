@@ -69,10 +69,10 @@ class Account(AggregateRoot[AccountId]):
         return account
 
     @classmethod
-    def register_from_social(cls, email: Email, provider: str, provider_user_id: str) -> "Account":
+    def register_from_social(cls, email: Email, external_identity: ExternalIdentity) -> "Account":
         """Register a new account from social SSO."""
         account = cls(id=AccountId.create(), email=email)
-        account.link_external_identity(provider, provider_user_id)
+        account.link_external_identity(external_identity)
         return account
 
     # ------------------------------------------------------------------
@@ -112,11 +112,11 @@ class Account(AggregateRoot[AccountId]):
             self.roles.remove(role)
             self.touch()
 
-    def link_external_identity(self, provider: str, provider_user_id: str) -> None:
-        if any(i.provider == provider for i in self.external_identities):
+    def link_external_identity(self, external_identity: ExternalIdentity) -> None:
+        if any(i.provider == external_identity.provider for i in self.external_identities):
             return
 
-        self.external_identities.append(ExternalIdentity(provider=provider, provider_user_id=provider_user_id))
+        self.external_identities.append(external_identity)
         self.touch()
 
     def enable_mfa(self, secret: str, recovery_codes: list[str]) -> None:

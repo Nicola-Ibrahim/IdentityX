@@ -5,6 +5,7 @@ from ...application.account.service import AccountService
 from ...application.audit.service import AuditService
 from ...application.authentication.service import AuthenticationService
 from ...application.authentication.social_service import SocialAuthenticationService
+from ..authentication.social.google_provider import GoogleAuthenticationProvider
 from ..crypto.jwt_token import JWTTokenService
 from ..crypto.password_hasher import PBKDF2PasswordHasher
 from ..messaging.email_notifier import ConsoleNotificationService
@@ -72,7 +73,14 @@ class AccountsDIContainer(containers.DeclarativeContainer):
         uow=_unit_of_work,
         auth_service=authentication_service,
         audit_service=_audit_service,
-        client_id=settings.provided.GOOGLE_CLIENT_ID,
-        client_secret=settings.provided.GOOGLE_CLIENT_SECRET,
-        server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+        providers=providers.Dict({
+            "google": providers.Factory(
+                GoogleAuthenticationProvider,
+                client_id=settings.provided.GOOGLE_CLIENT_ID,
+                client_secret=settings.provided.GOOGLE_CLIENT_SECRET,
+                redirect_uri=settings.provided.GOOGLE_REDIRECT_URI,
+                auth_url=settings.provided.GOOGLE_AUTH_URL,
+                server_metadata_url=settings.provided.GOOGLE_METADATA_URL,
+            ),
+        }),
     )

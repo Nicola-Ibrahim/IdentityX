@@ -1,8 +1,8 @@
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 
-from src.modules.accounts.application.authentication.service import AuthenticationService
-from src.modules.accounts.infrastructure.configuration.containers import AccountsDIContainer
+from src.accounts.application.authentication.service import AuthenticationService
+from src.accounts.infrastructure.configuration.containers import AccountsDIContainer
 
 router = APIRouter(tags=["discovery"])
 

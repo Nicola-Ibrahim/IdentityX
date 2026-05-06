@@ -35,9 +35,27 @@ class AccountsSettings(BaseSettings):
     GOOGLE_CLIENT_ID: str = Field(..., description="Google OAuth2 Client ID")
     GOOGLE_CLIENT_SECRET: str = Field(..., description="Google OAuth2 Client Secret")
     GOOGLE_REDIRECT_URI: str = Field(..., description="Google OAuth2 Redirect URI")
+    GOOGLE_AUTH_URL: str = Field(
+        ...,
+        description="Google OAuth2 Authorization URL",
+        examples=["https://accounts.google.com/o/oauth2/v2/auth"]
+    )
+    GOOGLE_METADATA_URL: str = Field(
+        ...,
+        description="Google OAuth2 Metadata URL",
+        examples=["https://accounts.google.com/.well-known/openid-configuration"]
+    )
 
     # MFA
-    MFA_ISSUER_NAME: str = Field(default="IdentityX", description="MFA Issuer Name")
+    MFA_ISSUER_NAME: str = Field(
+        ...,
+        description="MFA Issuer Name",
+        examples=["IdentityX"]
+    )
 
     # Trusted Devices
-    TRUSTED_DEVICE_TTL_DAYS: int = Field(default=30, description="Trusted Device TTL in days")
+    TRUSTED_DEVICE_TTL_DAYS: int = Field(
+        ...,
+        description="Trusted Device TTL in days",
+        examples=[30]
+    )

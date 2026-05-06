@@ -15,8 +15,8 @@ class AccountsStartUp:
             self._container.init_resources()
             self._container.wire(
                 packages=[
-                    "src.modules.accounts.application",
-                    "src.modules.accounts.infrastructure",
+                    "src.accounts.application",
+                    "src.accounts.infrastructure",
                     "src.api.routers.accounts",
                 ]
             )
