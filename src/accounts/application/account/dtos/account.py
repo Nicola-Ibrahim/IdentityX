@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from ...domain.account.account import Account
 
 
-class AccountDTO(BaseModel):
+class AuthDTO(BaseModel):
     id: str
     email: str
     is_verified: bool
@@ -14,7 +14,7 @@ class AccountDTO(BaseModel):
     roles: tuple[str, ...]
 
     @classmethod
-    def from_domain(cls, account: "Account") -> "AccountDTO":
+    def from_domain(cls, account: "Account") -> "AuthDTO":
         return cls(
             id=str(account.id.value),
             email=str(account.email),

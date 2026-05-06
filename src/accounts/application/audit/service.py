@@ -2,6 +2,7 @@ from typing import Any
 
 from ...domain.audit.audit_action import AuditAction
 from ...domain.audit.audit_log import AuditLog
+from ....buckets.database.decorators import db
 from ...domain.audit.value_objects.audit_log_id import AuditLogId
 from ...domain.interfaces.uow import BaseAsyncUnitOfWork
 
@@ -14,6 +15,7 @@ class AuditService:
     def __init__(self, uow: BaseAsyncUnitOfWork) -> None:
         self.uow = uow
 
+    @db.transactional
     async def log(
         self,
         action: AuditAction,

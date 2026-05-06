@@ -1,5 +1,5 @@
 from authlib.integrations.httpx_client import AsyncOAuth2Client
-from ....application.authentication.social_profile_dto import SocialUserProfileDTO
+from typing import Any
 from ....application.interfaces.social_provider import BaseSocialAuthenticationProvider
 
 
@@ -39,7 +39,7 @@ class GoogleAuthenticationProvider(BaseSocialAuthenticationProvider):
             "&scope=openid%20email%20profile"
         )
 
-    async def fetch_profile(self, code: str) -> SocialUserProfileDTO:
+    async def fetch_profile(self, code: str) -> dict[str, Any]:
         """
         Exchange code for token and fetch Google profile info.
         """
@@ -67,10 +67,10 @@ class GoogleAuthenticationProvider(BaseSocialAuthenticationProvider):
             if not email or not sub:
                 raise ValueError("Invalid response from Google: missing email or sub")
 
-            return SocialUserProfileDTO(
-                provider=self.provider_name,
-                provider_user_id=str(sub),
-                email=email,
-                name=user_data.get("name"),
-                picture_url=user_data.get("picture"),
-            )
+            return {
+                "provider": self.provider_name,
+                "provider_user_id": str(sub),
+                "email": email,
+                "name": user_data.get("name"),
+                "picture_url": user_data.get("picture"),
+            }

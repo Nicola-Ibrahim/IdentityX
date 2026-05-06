@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from ..authentication.social_profile_dto import SocialUserProfileDTO
+from typing import Any
 
 
 class BaseSocialAuthenticationProvider(ABC):
@@ -24,7 +24,7 @@ class BaseSocialAuthenticationProvider(ABC):
         pass
 
     @abstractmethod
-    async def fetch_profile(self, code: str) -> SocialUserProfileDTO:
+    async def fetch_profile(self, code: str) -> dict[str, Any]:
         """
         Exchanges the authorization code for a token and fetches the normalized user profile.
         """

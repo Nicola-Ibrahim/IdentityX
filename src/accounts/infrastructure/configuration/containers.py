@@ -1,10 +1,11 @@
 from dependency_injector import containers, providers
 from .settings import AccountsSettings
 
-from ...application.account.service import AccountService
+from ...application.account.accounts import AccountService
 from ...application.audit.service import AuditService
-from ...application.authentication.service import AuthenticationService
-from ...application.authentication.social_service import SocialAuthenticationService
+from ...application.authentication.password_auth import PasswordAuthenticationService
+from ...application.authentication.social_auth import SocialAuthenticationService
+from ...application.authentication.sessions import SessionService
 from ..authentication.social.google_provider import GoogleAuthenticationProvider
 from ..crypto.jwt_token import JWTTokenService
 from ..crypto.password_hasher import PBKDF2PasswordHasher
@@ -52,7 +53,7 @@ class AccountsDIContainer(containers.DeclarativeContainer):
     )
 
     # -- Application Services (Exposed) --
-    account_service = providers.Factory(
+    accounts = providers.Factory(
         AccountService,
         uow=_unit_of_work,
         password_hasher=_password_hasher,
@@ -60,18 +61,26 @@ class AccountsDIContainer(containers.DeclarativeContainer):
         audit_service=_audit_service,
     )
 
-    authentication_service = providers.Factory(
-        AuthenticationService,
+    sessions = providers.Factory(
+        SessionService,
         uow=_unit_of_work,
-        password_hasher=_password_hasher,
         token_service=_token_service,
         audit_service=_audit_service,
     )
 
-    social_authentication_service = providers.Factory(
+    password_auth = providers.Factory(
+        PasswordAuthenticationService,
+        uow=_unit_of_work,
+        password_hasher=_password_hasher,
+        sessions=sessions,
+        token_service=_token_service,
+        audit_service=_audit_service,
+    )
+
+    social_auth = providers.Factory(
         SocialAuthenticationService,
         uow=_unit_of_work,
-        auth_service=authentication_service,
+        sessions=sessions,
         audit_service=_audit_service,
         providers=providers.Dict({
             "google": providers.Factory(

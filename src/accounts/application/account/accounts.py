@@ -11,7 +11,7 @@ from ...domain.interfaces.uow import BaseAsyncUnitOfWork
 from ..audit.service import AuditService
 from ..interfaces.notification_service import BaseNotificationService
 from ..interfaces.password_hasher import BasePasswordHasher
-from .dto import AuthDTO
+from .dtos.account import AuthDTO
 
 
 class AccountService:

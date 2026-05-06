@@ -7,3 +7,4 @@ hashing.
 
 from .notification_service import BaseNotificationService  # noqa: F401
 from .password_hasher import BasePasswordHasher  # noqa: F401
+from .social_provider import BaseSocialAuthenticationProvider  # noqa: F401

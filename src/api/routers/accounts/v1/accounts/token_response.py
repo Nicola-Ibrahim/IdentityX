@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from src.modules.accounts.application.authentication.issue_token_pair_dto import IssuedTokenPairDTO
+from src.accounts.application.authentication.dtos.token_pair import TokenPair
 
 
 class TokenResponse(BaseModel):
@@ -10,7 +10,7 @@ class TokenResponse(BaseModel):
     expires_in: int
 
     @classmethod
-    def from_dto(cls, dto: IssuedTokenPairDTO) -> "TokenResponse":
+    def from_dto(cls, dto: TokenPair) -> "TokenResponse":
         return cls(
             access_token=dto.access_token,
             refresh_token=dto.refresh_token,

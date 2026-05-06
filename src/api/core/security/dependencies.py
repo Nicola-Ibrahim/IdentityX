@@ -8,7 +8,7 @@ from src.accounts.application.interfaces.token_errors import (
     TokenRevokedError,
 )
 from src.accounts.infrastructure.configuration.containers import AccountsDIContainer
-from src.accounts.application.authentication.service import AuthenticationService
+from src.accounts.application.authentication.sessions import SessionService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/accounts/token")
 
@@ -16,14 +16,14 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/accounts/token")
 @inject
 async def get_current_account_id(
     token: str = Depends(oauth2_scheme),
-    auth_service: AuthenticationService = Depends(Provide[AccountsDIContainer.authentication_service]),
+    sessions: SessionService = Depends(Provide[AccountsDIContainer.sessions]),
 ) -> str:
-    """Validate Bearer token via the DI-injected AuthenticationService.
+    """Validate Bearer token via the DI-injected SessionService.
 
     Maps domain exceptions to HTTP 401. No crypto code here.
     """
     try:
-        return auth_service.get_current_account_id(token)
+        return sessions.get_current_account_id(token)
     except TokenExpiredError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

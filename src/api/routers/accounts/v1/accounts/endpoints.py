@@ -1,25 +1,29 @@
-from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
-from fastapi.security import OAuth2PasswordRequestForm
+import hashlib
 import secrets
 
-from src.api.core.responses.success import APIResponse, ResponseEnvelope
+from dependency_injector.wiring import Provide, inject
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_limiter.depends import RateLimiter
 from pyrate_limiter import Duration, Limiter, Rate
-from src.api.core.security.dependencies import get_current_account_id
-from src.accounts.application.account.dto import AccountDTO
-from src.accounts.application.account.service import AccountService
-from src.accounts.application.authentication.issue_token_pair_dto import IssuedTokenPairDTO
-from src.accounts.application.authentication.service import AuthenticationService
-from src.accounts.application.authentication.social_service import SocialAuthenticationService
-from src.accounts.application.authentication.mfa_dto import MfaChallengeDTO, MfaSetupDTO
-from src.accounts.infrastructure.configuration.containers import AccountsDIContainer
 
+from src.accounts.application.account.accounts import AccountService
+from src.accounts.application.account.dtos.account import AccountDTO
+from src.accounts.application.authentication.dtos import (
+    AuthDTO,
+    MfaSetup,
+    TokenPair,
+)
+from src.accounts.application.authentication.password_auth import PasswordAuthenticationService
+from src.accounts.application.authentication.sessions import SessionService
+from src.accounts.application.authentication.social_auth import SocialAuthenticationService
+from src.accounts.infrastructure.configuration.containers import AccountsDIContainer
+from src.api.core.responses.success import APIResponse, ResponseEnvelope
+from src.api.core.security.dependencies import get_current_account_id
+
+from .mfa_requests import MfaEnableRequest, MfaSetupRequest, MfaVerifyRequest
 from .register_account_request import RegisterAccountRequest
 from .update_account_request import UpdateAccountRequest
-from .mfa_requests import MfaSetupRequest, MfaEnableRequest, MfaVerifyRequest
-from fastapi import Request
-import hashlib
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
 
@@ -38,9 +42,9 @@ def raise_http(e):
 @inject
 async def register_account(
     request: RegisterAccountRequest,
-    account_service: AccountService = Depends(Provide[AccountsDIContainer.account_service]),
+    accounts: AccountService = Depends(Provide[AccountsDIContainer.accounts]),
 ) -> APIResponse:
-    result = await account_service.register(request.email, request.password)
+    result = await accounts.register(request.email, request.password)
     return result.match(
         on_success=lambda dto: APIResponse(
             data=dto.model_dump(),
@@ -59,9 +63,9 @@ async def register_account(
 @inject
 async def verify_account(
     account_id: str,
-    account_service: AccountService = Depends(Provide[AccountsDIContainer.account_service]),
+    accounts: AccountService = Depends(Provide[AccountsDIContainer.accounts]),
 ) -> APIResponse:
-    result = await account_service.verify(account_id)
+    result = await accounts.verify(account_id)
     return result.match(
         on_success=lambda dto: APIResponse(
             data=dto.model_dump(),
@@ -73,7 +77,7 @@ async def verify_account(
 
 @router.post(
     "/token",
-    response_model=ResponseEnvelope[IssuedTokenPairDTO | MfaChallengeDTO],
+    response_model=ResponseEnvelope[AuthDTO],
     summary="OAuth2 compatible token login",
     dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(5, Duration.SECOND * 60))))],
 )
@@ -82,38 +86,34 @@ async def login_for_access_token(
     request: Request,
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    auth_service: AuthenticationService = Depends(Provide[AccountsDIContainer.authentication_service]),
+    auth_service: PasswordAuthenticationService = Depends(Provide[AccountsDIContainer.password_auth]),
 ) -> APIResponse:
     ip_address = request.client.host if request.client else "unknown"
     user_agent = request.headers.get("user-agent", "unknown")
-    
+
     # Hash the trusted device token from cookie if it exists
     device_token = request.cookies.get("trusted_device")
     device_hash = hashlib.sha256(device_token.encode()).hexdigest() if device_token else None
-    
+
     result = await auth_service.authenticate(
-        form_data.username, 
-        form_data.password,
-        ip_address=ip_address,
-        user_agent=user_agent,
-        device_hash=device_hash
+        form_data.username, form_data.password, ip_address=ip_address, user_agent=user_agent, device_hash=device_hash
     )
 
-    if result.is_success and isinstance(result.value, IssuedTokenPairDTO):
+    if result.is_success:
         dto = result.value
-        # Set Refresh Token in a secure, HttpOnly cookie
-        response.set_cookie(
-            key="refresh_token",
-            value=dto.refresh_token,
-            httponly=True,
-            secure=True,  # Set to True in production
-            samesite="lax",
-            max_age=30 * 24 * 60 * 60,  # 30 days
-        )
+        if not dto.requires_mfa and dto.tokens:
+            response.set_cookie(
+                key="refresh_token",
+                value=dto.tokens.refresh_token,
+                httponly=True,
+                secure=True,
+                samesite="lax",
+                max_age=30 * 24 * 60 * 60,
+            )
 
     return result.match(
         on_success=lambda dto: APIResponse(
-            data=dto.model_dump(exclude={"refresh_token"}) if isinstance(dto, IssuedTokenPairDTO) else dto.model_dump(),
+            data=dto.model_dump(exclude_none=True),
             status_code=status.HTTP_200_OK,
         ),
         on_failure=raise_http,
@@ -122,7 +122,7 @@ async def login_for_access_token(
 
 @router.post(
     "/token/refresh",
-    response_model=ResponseEnvelope[IssuedTokenPairDTO],
+    response_model=ResponseEnvelope[TokenPair],
     summary="Refresh access token",
     dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(10, Duration.SECOND * 60))))],
 )
@@ -130,7 +130,7 @@ async def login_for_access_token(
 async def refresh_token(
     response: Response,
     refresh_token: str | None = Cookie(None),
-    auth_service: AuthenticationService = Depends(Provide[AccountsDIContainer.authentication_service]),
+    sessions: SessionService = Depends(Provide[AccountsDIContainer.sessions]),
 ) -> APIResponse:
     if not refresh_token:
         raise HTTPException(
@@ -138,7 +138,7 @@ async def refresh_token(
             detail="Refresh token missing",
         )
 
-    result = await auth_service.refresh_session(refresh_token)
+    result = await sessions.refresh_session(refresh_token)
 
     if result.is_success:
         dto = result.value
@@ -180,10 +180,10 @@ async def refresh_token(
 async def logout(
     response: Response,
     refresh_token: str | None = Cookie(None),
-    auth_service: AuthenticationService = Depends(Provide[AccountsDIContainer.authentication_service]),
+    sessions: SessionService = Depends(Provide[AccountsDIContainer.sessions]),
 ) -> APIResponse:
     if refresh_token:
-        await auth_service.logout(refresh_token)
+        await sessions.logout(refresh_token)
         response.delete_cookie("refresh_token")
 
     return APIResponse(
@@ -200,9 +200,9 @@ async def logout(
 @inject
 async def get_current_account(
     account_id: str = Depends(get_current_account_id),
-    account_service: AccountService = Depends(Provide[AccountsDIContainer.account_service]),
+    accounts: AccountService = Depends(Provide[AccountsDIContainer.accounts]),
 ) -> APIResponse:
-    result = await account_service.get_by_id(account_id)
+    result = await accounts.get_by_id(account_id)
     return result.match(
         on_success=lambda dto: APIResponse(
             data=dto.model_dump(),
@@ -221,9 +221,9 @@ async def get_current_account(
 async def update_account(
     request: UpdateAccountRequest,
     account_id: str = Depends(get_current_account_id),
-    account_service: AccountService = Depends(Provide[AccountsDIContainer.account_service]),
+    accounts: AccountService = Depends(Provide[AccountsDIContainer.accounts]),
 ) -> APIResponse:
-    result = await account_service.update(account_id, request.model_dump(exclude_unset=True))
+    result = await accounts.update(account_id, request.model_dump(exclude_unset=True))
     return result.match(
         on_success=lambda dto: APIResponse(
             data=dto.model_dump(),
@@ -232,15 +232,16 @@ async def update_account(
         on_failure=raise_http,
     )
 
+
 @router.post(
     "/mfa/setup",
-    response_model=ResponseEnvelope[MfaSetupDTO],
+    response_model=ResponseEnvelope[MfaSetup],
     summary="Initiate MFA setup",
 )
 @inject
 async def setup_mfa(
     request: MfaSetupRequest,
-    auth_service: AuthenticationService = Depends(Provide[AccountsDIContainer.authentication_service]),
+    auth_service: PasswordAuthenticationService = Depends(Provide[AccountsDIContainer.password_auth]),
 ) -> APIResponse:
     result = await auth_service.setup_mfa(request.mfa_token)
     return result.match(
@@ -251,7 +252,7 @@ async def setup_mfa(
 
 @router.post(
     "/mfa/enable",
-    response_model=ResponseEnvelope[IssuedTokenPairDTO],
+    response_model=ResponseEnvelope[AuthDTO],
     summary="Verify and enable MFA",
 )
 @inject
@@ -259,34 +260,35 @@ async def enable_mfa(
     fastapi_request: Request,
     response: Response,
     request: MfaEnableRequest,
-    auth_service: AuthenticationService = Depends(Provide[AccountsDIContainer.authentication_service]),
+    auth_service: PasswordAuthenticationService = Depends(Provide[AccountsDIContainer.password_auth]),
 ) -> APIResponse:
     ip_address = fastapi_request.client.host if fastapi_request.client else "unknown"
     user_agent = fastapi_request.headers.get("user-agent", "unknown")
-    
+
     result = await auth_service.verify_and_enable_mfa(
         request.mfa_token,
         request.totp_code,
         request.secret,
         request.recovery_codes,
         ip_address=ip_address,
-        user_agent=user_agent
+        user_agent=user_agent,
     )
 
     if result.is_success:
         dto = result.value
-        response.set_cookie(
-            key="refresh_token",
-            value=dto.refresh_token,
-            httponly=True,
-            secure=True,
-            samesite="lax",
-            max_age=30 * 24 * 60 * 60,
-        )
+        if dto.tokens:
+            response.set_cookie(
+                key="refresh_token",
+                value=dto.tokens.refresh_token,
+                httponly=True,
+                secure=True,
+                samesite="lax",
+                max_age=30 * 24 * 60 * 60,
+            )
 
     return result.match(
         on_success=lambda dto: APIResponse(
-            data=dto.model_dump(exclude={"refresh_token"}),
+            data=dto.model_dump(exclude_none=True),
             status_code=status.HTTP_200_OK,
         ),
         on_failure=raise_http,
@@ -295,7 +297,7 @@ async def enable_mfa(
 
 @router.post(
     "/token/mfa",
-    response_model=ResponseEnvelope[IssuedTokenPairDTO],
+    response_model=ResponseEnvelope[AuthDTO],
     summary="Verify TOTP and issue tokens",
 )
 @inject
@@ -303,7 +305,7 @@ async def login_mfa(
     fastapi_request: Request,
     response: Response,
     request: MfaVerifyRequest,
-    auth_service: AuthenticationService = Depends(Provide[AccountsDIContainer.authentication_service]),
+    auth_service: PasswordAuthenticationService = Depends(Provide[AccountsDIContainer.password_auth]),
 ) -> APIResponse:
     ip_address = fastapi_request.client.host if fastapi_request.client else "unknown"
     user_agent = fastapi_request.headers.get("user-agent", "unknown")
@@ -314,30 +316,35 @@ async def login_mfa(
         recovery_code=request.recovery_code,
         ip_address=ip_address,
         user_agent=user_agent,
-        trust_device=request.trust_device
+        trust_device=request.trust_device,
     )
 
     if result.is_success:
         dto = result.value
-        response.set_cookie(
-            key="refresh_token",
-            value=dto.refresh_token,
-            httponly=True,
-            secure=True,
-            samesite="lax",
-            max_age=30 * 24 * 60 * 60,
-        )
+        if dto.tokens:
+            response.set_cookie(
+                key="refresh_token",
+                value=dto.tokens.refresh_token,
+                httponly=True,
+                secure=True,
+                samesite="lax",
+                max_age=30 * 24 * 60 * 60,
+            )
 
     return result.match(
         on_success=lambda dto: APIResponse(
-            data=dto.model_dump(exclude={"refresh_token"}),
+            data=dto.model_dump(exclude_none=True),
             status_code=status.HTTP_200_OK,
         ),
         on_failure=raise_http,
     )
 
+
 import secrets
+
 ...
+
+
 @router.get(
     "/social/{provider_name}/login",
     summary="Get Social OAuth2 Login URL",
@@ -346,7 +353,7 @@ import secrets
 async def social_login(
     provider_name: str,
     response: Response,
-    social_service: SocialAuthenticationService = Depends(Provide[AccountsDIContainer.social_authentication_service]),
+    social_auth: SocialAuthenticationService = Depends(Provide[AccountsDIContainer.social_auth]),
 ) -> APIResponse:
     state = secrets.token_urlsafe(32)
     response.set_cookie(
@@ -357,9 +364,9 @@ async def social_login(
         samesite="lax",
         max_age=300,  # 5 minutes
     )
-    
-    result = await social_service.get_authorization_url(provider_name, state)
-    
+
+    result = await social_auth.get_authorization_url(provider_name, state)
+
     return result.match(
         on_success=lambda url: APIResponse(data={"url": url}, status_code=status.HTTP_200_OK),
         on_failure=raise_http,
@@ -368,7 +375,7 @@ async def social_login(
 
 @router.get(
     "/social/{provider_name}/callback",
-    response_model=ResponseEnvelope[IssuedTokenPairDTO],
+    response_model=ResponseEnvelope[AuthDTO],
     summary="Social OAuth2 Callback",
 )
 @inject
@@ -378,41 +385,38 @@ async def social_callback(
     response: Response,
     code: str,
     state: str,
-    social_service: SocialAuthenticationService = Depends(Provide[AccountsDIContainer.social_authentication_service]),
+    social_auth: SocialAuthenticationService = Depends(Provide[AccountsDIContainer.social_auth]),
 ) -> APIResponse:
     stored_state = fastapi_request.cookies.get(f"{provider_name}_auth_state")
     if not stored_state or stored_state != state:
         return APIResponse(
-            message="Invalid OAuth state. Potential CSRF attack.",
-            status_code=status.HTTP_400_BAD_REQUEST
+            message="Invalid OAuth state. Potential CSRF attack.", status_code=status.HTTP_400_BAD_REQUEST
         )
-    
+
     response.delete_cookie(f"{provider_name}_auth_state")
-    
+
     ip_address = fastapi_request.client.host if fastapi_request.client else "unknown"
     user_agent = fastapi_request.headers.get("user-agent", "unknown")
-    
-    result = await social_service.authenticate_callback(
-        provider_name=provider_name,
-        code=code,
-        ip_address=ip_address,
-        user_agent=user_agent
+
+    result = await social_auth.authenticate_callback(
+        provider_name=provider_name, code=code, ip_address=ip_address, user_agent=user_agent
     )
-    
+
     if result.is_success:
         dto = result.value
-        response.set_cookie(
-            key="refresh_token",
-            value=dto.refresh_token,
-            httponly=True,
-            secure=True,
-            samesite="lax",
-            max_age=30 * 24 * 60 * 60,
-        )
+        if dto.tokens:
+            response.set_cookie(
+                key="refresh_token",
+                value=dto.tokens.refresh_token,
+                httponly=True,
+                secure=True,
+                samesite="lax",
+                max_age=30 * 24 * 60 * 60,
+            )
 
     return result.match(
         on_success=lambda dto: APIResponse(
-            data=dto.model_dump(exclude={"refresh_token"}),
+            data=dto.model_dump(exclude_none=True),
             status_code=status.HTTP_200_OK,
         ),
         on_failure=raise_http,
