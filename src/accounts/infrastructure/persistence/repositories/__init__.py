@@ -1,4 +1,4 @@
-from .sql_account_repo import SQLBaseAccountRepository
-from .sql_session_repo import SQLBaseSessionRepository
+from .account import SQLBaseAccountRepository
+from .session import SQLBaseSessionRepository
 
 __all__ = ["SQLBaseAccountRepository", "SQLBaseSessionRepository"]

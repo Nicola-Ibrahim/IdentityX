@@ -1,24 +1,24 @@
 from typing import Iterable
 
 from sqlalchemy import select, update
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
+from .....buckets.database.repository import SQLBaseRepository
 from ....domain.interfaces.session_repository import BaseSessionRepository
 from ....domain.session.session import Session
 from ....domain.session.value_objects.account_id import AccountId
 from ....domain.session.value_objects.refresh_token import RefreshToken
 from ....domain.session.value_objects.session_id import SessionId
 from ....domain.session.value_objects.session_status import SessionStatus
-from ..exceptions import SessionRecordNotFoundError
+from .....building_blocks.infrastructure.persistance.exceptions import RecordNotFoundError
 from ..orm.models import SessionTable
 
 
-class SQLBaseSessionRepository(BaseSessionRepository):
+class SQLBaseSessionRepository(SQLBaseRepository[SessionTable], BaseSessionRepository):
     """SQLAlchemy repository for session aggregates."""
 
-    def __init__(self, db_session: AsyncSession) -> None:
-        self._db_session = db_session
+    def __init__(self) -> None:
+        super().__init__(SessionTable)
 
     def _to_domain(self, record: SessionTable) -> Session:
         account_id = AccountId.create(record.account.id)
@@ -46,14 +46,16 @@ class SQLBaseSessionRepository(BaseSessionRepository):
             is_active=session.is_active,
             is_revoked=session.is_revoked,
         )
-        self._db_session.add(record)
+        self.session.add(record)
 
     async def update(self, session: Session) -> None:
         stmt = select(SessionTable).filter(SessionTable.id == session.id.value)
-        result = await self._db_session.execute(stmt)
+        result = await self.session.execute(stmt)
         record = result.scalars().one_or_none()
+
         if not record:
-            raise SessionRecordNotFoundError(str(session.id.value))
+            raise RecordNotFoundError(identifier=str(session.id.value))
+
         record.refresh_token = session.refresh_token.value
         record.expires_at = session.expires_at
         record.is_active = session.is_active
@@ -61,11 +63,17 @@ class SQLBaseSessionRepository(BaseSessionRepository):
 
     async def get_by_id(self, session_id: SessionId) -> Session | None:
         stmt = (
-            select(SessionTable).options(joinedload(SessionTable.account)).filter(SessionTable.id == session_id.value)
+            select(SessionTable)
+            .options(
+                joinedload(SessionTable.account)
+            )  # we Use joinload because the async session does not support lazy loading
+            .filter(SessionTable.id == session_id.value)
         )
-        result = await self._db_session.execute(stmt)
+        result = await self.session.execute(stmt)
         record = result.scalars().one_or_none()
-        return self._to_domain(record) if record else None
+        if not record:
+            raise RecordNotFoundError(identifier=str(session_id.value))
+        return self._to_domain(record)
 
     async def get_by_refresh_token(self, token: RefreshToken) -> Session | None:
         stmt = (
@@ -73,7 +81,7 @@ class SQLBaseSessionRepository(BaseSessionRepository):
             .options(joinedload(SessionTable.account))
             .filter(SessionTable.refresh_token == token.value)
         )
-        result = await self._db_session.execute(stmt)
+        result = await self.session.execute(stmt)
         record = result.scalars().one_or_none()
         return self._to_domain(record) if record else None
 
@@ -83,7 +91,7 @@ class SQLBaseSessionRepository(BaseSessionRepository):
             .options(joinedload(SessionTable.account))
             .filter(SessionTable.account_id == account_id.value)
         )
-        result = await self._db_session.execute(stmt)
+        result = await self.session.execute(stmt)
         records = result.scalars().all()
         return [self._to_domain(record) for record in records]
 
@@ -94,4 +102,4 @@ class SQLBaseSessionRepository(BaseSessionRepository):
             .where(SessionTable.is_active.is_(True))
             .values(is_active=False, is_revoked=True)
         )
-        await self._session.execute(stmt)
+        await self.session.execute(stmt)

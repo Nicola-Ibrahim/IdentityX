@@ -1,16 +1,15 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-
+from .....buckets.database.repository import SQLBaseRepository
 from ....domain.audit.audit_log import AuditLog
+from ....domain.interfaces.audit_repository import BaseAuditRepository
 from ..orm.audit_logs import AuditLogTable
 
-
-class SQLAuditLogRepository:
+class SQLAuditLogRepository(SQLBaseRepository[AuditLogTable], BaseAuditRepository):
     """
     SQLAlchemy implementation for storing audit logs.
     """
 
-    def __init__(self, db_session: AsyncSession) -> None:
-        self._db_session = db_session
+    def __init__(self) -> None:
+        super().__init__(AuditLogTable)
 
     async def add(self, audit_log: AuditLog) -> None:
         """
@@ -26,5 +25,4 @@ class SQLAuditLogRepository:
             created_at=audit_log.created_at,
             updated_at=audit_log.updated_at,
         )
-        self._db_session.add(record)
-        # Note: We don't flush here as it's handled by the UoW commit or flush
+        self.session.add(record)

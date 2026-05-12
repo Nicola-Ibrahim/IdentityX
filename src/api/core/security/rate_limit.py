@@ -1,4 +1,3 @@
-from fastapi_limiter import FastAPILimiter
 from fastapi import Request
 
 async def get_email_key(request: Request) -> str:

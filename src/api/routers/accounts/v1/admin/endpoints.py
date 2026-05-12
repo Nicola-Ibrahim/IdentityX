@@ -1,9 +1,9 @@
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from src.accounts.application.account.accounts import AccountService
-from src.accounts.application.account.dtos.account import AuthDTO
-from src.accounts.application.authentication.password_auth import PasswordAuthenticationService
+from src.accounts.application.usecases.account.accounts import AccountService
+from src.accounts.application.usecases.account.dtos.account import AuthDTO
+from src.accounts.application.usecases.authentication.password_auth import PasswordAuthenticationService
 from src.accounts.infrastructure.configuration.containers import AccountsDIContainer
 from src.api.core.security.dependencies import get_current_account_id
 from src.api.core.utils.pagination import PaginationParams, get_pagination

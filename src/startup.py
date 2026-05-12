@@ -8,14 +8,16 @@ from .buckets.redis import RedisContainer
 
 class IdentityXStartUp:
     """
-    Orchestrates the initialization and teardown of all system modules
-    and shared infrastructure.
+    The Composition Root. Orchestrates the initialization and teardown
+    of all system modules and shared infrastructure.
     """
 
     def __init__(self) -> None:
         self._settings = get_settings()
         self._db_container = DatabaseContainer()
         self._redis_container = RedisContainer()
+
+        # This handles the AccountsDIContainer internally
         self._accounts = AccountsStartUp()
 
         # List of all modules for easier iteration during init/stop
@@ -29,14 +31,16 @@ class IdentityXStartUp:
     def redis_container(self) -> RedisContainer:
         return self._redis_container
 
+    @property
+    def session_factory(self):
+        return self._db_container.session_factory()
+
     async def initialize(self) -> Self:
-        """
-        Initialize all modules and shared infrastructure.
-        """
+        """Initialize all modules and shared infrastructure."""
+
         # 1. Initialize shared infrastructure resources
         await self._db_container.init_resources()
         await self._redis_container.init_resources()
-
         # 2. Initialize all modules
         for module in self._modules:
             module.initialize(database=self._db_container.session_factory)
@@ -44,14 +48,12 @@ class IdentityXStartUp:
         return self
 
     async def stop(self) -> None:
-        """
-        Stop all modules and clean up resources in reverse order.
-        """
+        """Stop all modules and clean up resources in reverse order."""
         for module in reversed(self._modules):
             await module.stop()
 
-        # 3. Shutdown Redis infrastructure
+        # Shutdown Redis infrastructure
         await self._redis_container.shutdown_resources()
 
-        # 4. Shutdown shared database infrastructure
+        # Shutdown shared database infrastructure
         await self._db_container.shutdown_resources()

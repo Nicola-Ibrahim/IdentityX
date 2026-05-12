@@ -1,16 +1,12 @@
 from abc import ABC, abstractmethod
-
-from pydantic import BaseModel, Field
-
-from .enums import ErrorCode, ErrorType
-
+from pydantic import BaseModel
 
 class BaseBusinessRule(ABC, BaseModel):
     """Base type for business rules enforced by entities and value objects."""
 
-    code: ErrorCode = Field(default=ErrorCode.BUSINESS_RULE_VIOLATION, init=False)
-    message: str = Field(default="Business rule violated.", init=False)
-    error_type: ErrorType = Field(default=ErrorType.BUSINESS_RULE_VIOLATION, init=False)
+    code: str
+    message: str
+    error_type: str
 
     @abstractmethod
     def is_broken(self) -> bool:

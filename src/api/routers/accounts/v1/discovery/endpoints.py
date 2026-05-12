@@ -1,7 +1,7 @@
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 
-from src.accounts.application.authentication.sessions import SessionService
+from src.accounts.application.usecases.authentication.sessions import SessionService
 from src.accounts.infrastructure.configuration.containers import AccountsDIContainer
 
 router = APIRouter(tags=["discovery"])

@@ -75,7 +75,9 @@ class Result(BaseModel, Generic[TResult, TError]):
         Returns:
             Result[TResult, TError]: A successful result.
         """
-        return cls(_value=value)
+        instance = cls.model_construct()
+        object.__setattr__(instance, "_value", value)
+        return instance
 
     @classmethod
     def fail(cls, error: TError) -> "Result[TResult, TError]":
@@ -88,7 +90,9 @@ class Result(BaseModel, Generic[TResult, TError]):
         Returns:
             Result[TResult, TError]: An error result.
         """
-        return cls(_error=error)
+        instance = cls.model_construct()
+        object.__setattr__(instance, "_error", error)
+        return instance
 
     @staticmethod
     def capture(func: Callable) -> Callable:

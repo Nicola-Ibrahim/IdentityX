@@ -8,7 +8,7 @@ from src.accounts.application.interfaces.token_errors import (
     TokenRevokedError,
 )
 from src.accounts.infrastructure.configuration.containers import AccountsDIContainer
-from src.accounts.application.authentication.sessions import SessionService
+from src.accounts.application.usecases.authentication.sessions import SessionService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/accounts/token")
 
