@@ -1,19 +1,25 @@
-from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends
-
-from src.accounts.application.usecases.authentication.sessions import SessionService
-from src.accounts.infrastructure.configuration.containers import AccountsDIContainer
+from fastapi import APIRouter, Depends, HTTPException
+from src.accounts.infrastructure.module import AccountModule
+from src.accounts.application.queries.get_jwks import GetJwksQuery
+from src.api.core.security.dependencies import get_account_module
 
 router = APIRouter(tags=["discovery"])
 
 
+def raise_http(e):
+    raise HTTPException(status_code=e.status_code, detail=e.message)
+
+
 @router.get("/.well-known/jwks.json", summary="Get JSON Web Key Set")
-@inject
 async def get_jwks(
-    sessions: SessionService = Depends(Provide[AccountsDIContainer.sessions]),
+    account_module: AccountModule = Depends(get_account_module),
 ) -> dict:
     """
     Exposes the public key(s) in JWKS format for token verification by resource servers.
     """
-    jwk = sessions.get_public_key()
-    return {"keys": [jwk]}
+    result = await account_module.query(GetJwksQuery())
+    
+    return result.match(
+        on_success=lambda jwk: {"keys": [jwk]},
+        on_failure=raise_http,
+    )

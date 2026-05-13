@@ -1,12 +1,16 @@
-from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from src.accounts.application.usecases.account.accounts import AccountService
-from src.accounts.application.usecases.account.dtos.account import AuthDTO
-from src.accounts.application.usecases.authentication.password_auth import PasswordAuthenticationService
-from src.accounts.infrastructure.configuration.containers import AccountsDIContainer
-from src.api.core.security.dependencies import get_current_account_id
+from src.accounts.application.dtos.account import AuthDTO
+from src.accounts.infrastructure.module import AccountModule
+from src.api.core.security.dependencies import get_current_account_id, get_account_module
 from src.api.core.utils.pagination import PaginationParams, get_pagination
+
+from src.accounts.application.queries.list_accounts import ListAccountsQuery
+from src.accounts.application.queries.get_account_by_id import GetAccountByIdQuery
+from src.accounts.application.commands.deactivate import DeactivateAccountCommand
+from src.accounts.application.commands.activate import ActivateAccountCommand
+from src.accounts.application.commands.revoke_all_sessions import RevokeAllSessionsCommand
+from src.accounts.application.commands.remove import RemoveAccountCommand
 
 from ..core.responses.success import APIResponse, ResponseEnvelope
 
@@ -24,12 +28,11 @@ def raise_http(e):
     response_model=ResponseEnvelope[list[AuthDTO]],
     summary="List all accounts",
 )
-@inject
 async def list_accounts(
     pagination: PaginationParams = Depends(get_pagination),
-    accounts: AccountService = Depends(Provide[AccountsDIContainer.accounts]),
+    account_module: AccountModule = Depends(get_account_module),
 ) -> APIResponse:
-    result = await accounts.list(limit=pagination.limit, offset=pagination.offset)
+    result = await account_module.query(ListAccountsQuery(limit=pagination.limit, offset=pagination.offset))
 
     return result.match(
         on_success=lambda data: APIResponse(
@@ -52,12 +55,11 @@ async def list_accounts(
     response_model=ResponseEnvelope[AuthDTO],
     summary="Suspend an account",
 )
-@inject
 async def suspend_account(
     account_id: str,
-    accounts: AccountService = Depends(Provide[AccountsDIContainer.accounts]),
+    account_module: AccountModule = Depends(get_account_module),
 ) -> APIResponse:
-    result = await accounts.deactivate(account_id)
+    result = await account_module.execute(DeactivateAccountCommand(account_id=account_id))
     return result.match(
         on_success=lambda dto: APIResponse(
             data=dto.model_dump(),
@@ -72,12 +74,11 @@ async def suspend_account(
     response_model=ResponseEnvelope[AuthDTO],
     summary="Activate a suspended account",
 )
-@inject
 async def activate_account(
     account_id: str,
-    accounts: AccountService = Depends(Provide[AccountsDIContainer.accounts]),
+    account_module: AccountModule = Depends(get_account_module),
 ) -> APIResponse:
-    result = await accounts.activate(account_id)
+    result = await account_module.execute(ActivateAccountCommand(account_id=account_id))
     return result.match(
         on_success=lambda dto: APIResponse(
             data=dto.model_dump(),
@@ -92,12 +93,11 @@ async def activate_account(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Revoke all sessions for an account",
 )
-@inject
 async def revoke_account_sessions(
     account_id: str,
-    auth_service: PasswordAuthenticationService = Depends(Provide[AccountsDIContainer.password_auth]),
+    account_module: AccountModule = Depends(get_account_module),
 ) -> None:
-    result = await auth_service.revoke_all_sessions(account_id)
+    result = await account_module.execute(RevokeAllSessionsCommand(account_id=account_id))
     result.match(on_success=lambda _: None, on_failure=raise_http)
 
 
@@ -106,12 +106,11 @@ async def revoke_account_sessions(
     response_model=ResponseEnvelope[AuthDTO],
     summary="Retrieve a single account",
 )
-@inject
 async def get_account(
     account_id: str,
-    accounts: AccountService = Depends(Provide[AccountsDIContainer.accounts]),
+    account_module: AccountModule = Depends(get_account_module),
 ) -> APIResponse:
-    result = await accounts.get_by_id(account_id)
+    result = await account_module.query(GetAccountByIdQuery(account_id=account_id))
     return result.match(
         on_success=lambda dto: APIResponse(
             data=dto.model_dump(),
@@ -126,10 +125,9 @@ async def get_account(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete an account",
 )
-@inject
 async def delete_account(
     account_id: str,
-    accounts: AccountService = Depends(Provide[AccountsDIContainer.accounts]),
+    account_module: AccountModule = Depends(get_account_module),
 ) -> None:
-    result = await accounts.remove(account_id)
+    result = await account_module.execute(RemoveAccountCommand(account_id=account_id))
     result.match(on_success=lambda _: None, on_failure=raise_http)

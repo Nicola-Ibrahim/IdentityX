@@ -7,7 +7,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from .core.config import get_settings
 from ..startup import IdentityXStartUp
 from .core import middleware
-from .core.middleware.transaction import TransactionMiddleware
 from .core.exceptions.errors import APIError
 from .core.exceptions.handlers import global_exception_handler
 from .core.utils.routing_helpers import collect_routers
@@ -31,6 +30,7 @@ class APIFactory:
                 app.state.startup = startup
                 # Keep compatibility with current app.state.backend_modules if needed
                 app.state.backend_modules = {"accounts": startup.accounts}
+                app.state.account_module = startup.accounts.module
                 app.state.session_factory = startup.session_factory
                 yield
             finally:
@@ -71,8 +71,6 @@ class APIFactory:
                 allow_methods=self.settings.CORS_ALLOW_METHODS,
                 allow_headers=self.settings.CORS_ALLOW_HEADERS,
             )
-        
-        self.app.add_middleware(TransactionMiddleware)
 
     def _register_routers(self):
         routers = collect_routers()

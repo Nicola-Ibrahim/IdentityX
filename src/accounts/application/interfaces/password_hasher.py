@@ -1,11 +1,3 @@
-"""Password hashing interface for the users application layer.
-
-This interface defines the contract for password hashing services. A
-concrete implementation must provide methods to securely encode
-passwords and verify that a plaintext password matches a hashed
-representation.  Implementations live in the infrastructure layer.
-"""
-
 from abc import ABC, abstractmethod
 
 

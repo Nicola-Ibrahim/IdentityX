@@ -7,9 +7,9 @@ import jwt
 from cryptography.hazmat.primitives import serialization
 
 from ...application.interfaces.jwt import TokenPayload, TokenService, ValidatedClaims
-from ...application.interfaces.token_errors import (
-    TokenExpiredError,
-    TokenInvalidError,
+from ...domain.session.token_errors import (
+    TokenExpiredException,
+    TokenInvalidException,
 )
 
 
@@ -65,13 +65,13 @@ class JWTTokenService(TokenService):
     def validate_access_token(self, token: str) -> ValidatedClaims:
         claims = self.validate(token)
         if claims.typ != "access":
-            raise TokenInvalidError(f"Token type mismatch: expected access, got {claims.typ}")
+            raise TokenInvalidException(f"Token type mismatch: expected access, got {claims.typ}")
         return claims
 
     def validate_refresh_token(self, token: str) -> ValidatedClaims:
         claims = self.validate(token)
         if claims.typ != "refresh":
-            raise TokenInvalidError(f"Token type mismatch: expected refresh, got {claims.typ}")
+            raise TokenInvalidException(f"Token type mismatch: expected refresh, got {claims.typ}")
         return claims
 
     def create_mfa_token(self, claims: TokenPayload) -> str:
@@ -89,7 +89,7 @@ class JWTTokenService(TokenService):
     def validate_mfa_token(self, token: str) -> ValidatedClaims:
         claims = self.validate(token)
         if claims.typ != "mfa":
-            raise TokenInvalidError(f"Token type mismatch: expected mfa, got {claims.typ}")
+            raise TokenInvalidException(f"Token type mismatch: expected mfa, got {claims.typ}")
         return claims
 
     def validate(self, token: str) -> ValidatedClaims:
@@ -102,9 +102,9 @@ class JWTTokenService(TokenService):
             )
             return ValidatedClaims(**payload)
         except jwt.ExpiredSignatureError:
-            raise TokenExpiredError("Token has expired")
+            raise TokenExpiredException("Token has expired")
         except jwt.InvalidTokenError as exc:
-            raise TokenInvalidError(f"Invalid token: {str(exc)}")
+            raise TokenInvalidException(f"Invalid token: {str(exc)}")
 
     def get_public_key_jwk(self) -> dict:
         """Return the public key in JSON Web Key format."""

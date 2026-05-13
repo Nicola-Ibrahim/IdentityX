@@ -1,32 +1,24 @@
-from typing import Self
-
-from dependency_injector import providers
-
-from .containers import AccountsDIContainer
-
+from typing import Any, Self
+from src.accounts.infrastructure.module import AccountModule
 
 class AccountsStartUp:
+    """Manages the lifecycle of the Accounts module."""
     def __init__(self) -> None:
-        self._container: AccountsDIContainer | None = None
+        self._module: AccountModule | None = None
 
-    def initialize(self, database: providers.Provider) -> Self:
+    def initialize(self, database: Any) -> Self:
         try:
-            self._container = AccountsDIContainer(session_factory=database)
-            self._container.init_resources()
-            self._container.wire(
-                packages=[
-                    "src.accounts.application",
-                    "src.accounts.infrastructure",
-                    "src.api.routers.accounts",
-                ]
-            )
+            # database is a dependency_injector provider, call it to get the instance
+            session_factory = database()
+            self._module = AccountModule(session_factory)
             return self
         except Exception as ex:
             raise RuntimeError("Accounts module bootstrap failed") from ex
 
     async def stop(self) -> None:
-        try:
-            if self._container:
-                await self._container.stop()
-        finally:
-            self._container = None
+        self._module = None
+
+    @property
+    def module(self) -> AccountModule | None:
+        """Return the initialized AccountModule."""
+        return self._module

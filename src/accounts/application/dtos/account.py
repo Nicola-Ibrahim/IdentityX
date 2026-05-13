@@ -1,9 +1,6 @@
-from typing import TYPE_CHECKING
-
 from pydantic import BaseModel
 
-if TYPE_CHECKING:
-    from ...domain.account.account import Account
+from ...domain.account.account import Account
 
 
 class AuthDTO(BaseModel):

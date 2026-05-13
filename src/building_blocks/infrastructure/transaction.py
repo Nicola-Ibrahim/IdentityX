@@ -1,5 +1,7 @@
 from __future__ import annotations
+from typing import Any, Callable
 from src.buckets.database.session import SQLAlchemySessionFactory, _current_session
+from src.building_blocks.application.mediator import BaseCommand
 
 class TransactionScope:
     """Standalone async context manager for database transactions."""
@@ -22,3 +24,17 @@ class TransactionScope:
             await self._session.close()
             _current_session.reset(self._token)
         return False
+
+
+class TransactionBehavior:
+    """Mediator behavior for managing transactions."""
+
+    def __init__(self, session_factory: SQLAlchemySessionFactory):
+        self._session_factory = session_factory
+
+    async def handle(self, request: Any, next_behavior: Callable[[], Any]) -> Any:
+        if not isinstance(request, BaseCommand):
+            return await next_behavior()
+
+        async with TransactionScope(self._session_factory):
+            return await next_behavior()
