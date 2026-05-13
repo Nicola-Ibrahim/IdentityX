@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 
-from ....building_blocks.application.commands import BaseCommand
-from ....building_blocks.application.mediator import BaseCommand,  Handler
+from ....building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 from ...domain.account.account import Account
 from ...domain.account.value_objects.email import Email
 from ...domain.account.value_objects.external_identity import ExternalIdentity

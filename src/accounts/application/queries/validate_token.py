@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 
-from ....building_blocks.application.queries import BaseQuery
-from ....building_blocks.application.mediator import BaseQuery,  Handler
+from ....building_blocks.application.mediator import BaseQuery, Handler
 from ....building_blocks.domain.result import Result
 from ..interfaces.jwt import TokenService
 

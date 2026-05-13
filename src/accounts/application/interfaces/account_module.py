@@ -1,8 +1,7 @@
 from abc import abstractmethod
 from typing import Any
 
-from ....building_blocks.application.commands import BaseCommand
-from ....building_blocks.application.queries import BaseQuery
+from ....building_blocks.application.mediator import BaseCommand, BaseQuery
 from ....building_blocks.application.module import BaseModule
 
 

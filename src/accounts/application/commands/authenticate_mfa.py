@@ -3,8 +3,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 import pyotp
 from pydantic import BaseModel
-from src.building_blocks.application.commands import BaseCommand
-from src.building_blocks.application.mediator import BaseCommand,  Handler
+from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 from src.accounts.application.dtos.account import AuthDTO
 from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
 from src.accounts.domain.interfaces.session_repository import BaseSessionRepository

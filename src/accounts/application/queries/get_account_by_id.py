@@ -2,8 +2,7 @@ import uuid
 
 from pydantic import BaseModel
 
-from ....building_blocks.application.queries import BaseQuery
-from ....building_blocks.application.mediator import BaseQuery,  Handler
+from ....building_blocks.application.mediator import BaseQuery, Handler
 from ...domain.account.value_objects.account_id import AccountId
 from ...domain.interfaces.account_repository import BaseAccountRepository
 from ..dtos.account import AuthDTO

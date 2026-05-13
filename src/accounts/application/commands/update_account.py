@@ -3,8 +3,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from ....building_blocks.application.commands import BaseCommand
-from ....building_blocks.application.mediator import BaseCommand,  Handler
+from ....building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 from ...domain.account.value_objects.account_id import AccountId
 from ...domain.account.value_objects.email import Email
 from ...domain.interfaces.account_repository import BaseAccountRepository

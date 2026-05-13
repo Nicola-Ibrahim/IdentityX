@@ -4,8 +4,7 @@ from datetime import datetime, timedelta, timezone
 import pyotp
 from pydantic import BaseModel
 
-from ....building_blocks.application.commands import BaseCommand
-from ....building_blocks.application.mediator import BaseCommand,  Handler
+from ....building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 from ...domain.account.account import Account
 from ...domain.account.value_objects.account_id import AccountId
 from ...domain.audit.audit_action import AuditAction

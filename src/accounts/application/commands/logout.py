@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 
-from ....building_blocks.application.commands import BaseCommand
-from ....building_blocks.application.mediator import BaseCommand,  Handler
+from ....building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 from ...domain.interfaces.session_repository import BaseSessionRepository
 from ...domain.session.value_objects.refresh_token import RefreshToken
 from ..interfaces.jwt import TokenService
