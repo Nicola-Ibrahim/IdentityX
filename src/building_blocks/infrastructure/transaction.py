@@ -1,8 +1,7 @@
 from __future__ import annotations
 from typing import Any, Callable
 from src.buckets.database.session import SQLAlchemySessionFactory, _current_session
-from src.building_blocks.application.mediator import BaseCommand
-
+from src.building_blocks.application.commands import BaseCommand
 class TransactionScope:
     """Standalone async context manager for database transactions."""
 

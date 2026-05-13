@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from src.accounts.infrastructure.module import AccountModule
+from src.accounts.application.interfaces.account_module import BaseAccountModule
 from src.accounts.application.queries.get_jwks import GetJwksQuery
 from src.api.core.security.dependencies import get_account_module
 
@@ -12,7 +12,7 @@ def raise_http(e):
 
 @router.get("/.well-known/jwks.json", summary="Get JSON Web Key Set")
 async def get_jwks(
-    account_module: AccountModule = Depends(get_account_module),
+    account_module: BaseAccountModule = Depends(get_account_module),
 ) -> dict:
     """
     Exposes the public key(s) in JWKS format for token verification by resource servers.

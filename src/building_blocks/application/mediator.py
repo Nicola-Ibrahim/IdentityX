@@ -1,92 +1,121 @@
 import importlib
 import inspect
 import pkgutil
-from abc import abstractmethod
-from typing import Any, Callable, Generic, TypeVar, get_type_hints
+from typing import Any, Callable, TypeVar, get_type_hints
+
+from .commands import BaseCommand
+from .queries import BaseQuery
 
 TResponse = TypeVar("TResponse")
-TCommand = TypeVar("TCommand", bound="BaseCommand")
-TQuery = TypeVar("TQuery", bound="BaseQuery")
 
-class BaseCommand(Generic[TResponse]):
+
+class MediatorError(Exception):
+    """Base exception for mediator errors."""
+
     pass
 
-class BaseQuery(Generic[TResponse]):
+
+class HandlerNotFoundError(MediatorError):
+    """Raised when no handler is found for a request."""
+
     pass
 
-_handler_registry: dict[type, type] = {}
 
-class BaseCommandHandler(Generic[TCommand, TResponse]):
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        hints = get_type_hints(cls.handle)
-        command_type = hints.get("command")
-        if command_type and command_type is not inspect.Parameter.empty:
-            _handler_registry[command_type] = cls
+class HandlerRegistry:
+    """Internal registry for mapping requests to their handlers."""
 
-    @abstractmethod
-    async def handle(self, command: TCommand) -> TResponse:
-        raise NotImplementedError
+    def __init__(self):
+        self._handlers: dict[type, type] = {}
 
-class BaseQueryHandler(Generic[TQuery, TResponse]):
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        hints = get_type_hints(cls.handle)
-        query_type = hints.get("query")
-        if query_type and query_type is not inspect.Parameter.empty:
-            _handler_registry[query_type] = cls
+    def register(self, request_type: type, handler_type: type):
+        self._handlers[request_type] = handler_type
 
-    @abstractmethod
-    async def handle(self, query: TQuery) -> TResponse:
-        raise NotImplementedError
+    def get(self, request_type: type) -> type | None:
+        return self._handlers.get(request_type)
+
+
+# Singleton registry for global discovery
+_global_registry = HandlerRegistry()
+
 
 class Mediator:
-    def __init__(self, root_package: str, behaviors: list = None) -> None:
-        self._service_registry: dict[type, Callable] = {}
+    """
+    A lightweight, enterprise-grade Mediator inspired by MediatR (C#).
+    Encapsulates request/response patterns and cross-cutting concerns via pipelines.
+    """
+
+    def __init__(self, service_provider: Callable[[type], Any], behaviors: list[Any] | None = None) -> None:
+        """
+        :param service_provider: Callable to resolve dependencies from a DI container.
+        :param behaviors: List of pipeline behaviors to wrap execution.
+        """
+        self._service_provider = service_provider
         self._behaviors = behaviors or []
-        self._scan(root_package)
 
-    def register_service(self, interface_type: type, factory: Callable) -> None:
-        self._service_registry[interface_type] = factory
-
-    async def execute(self, command: BaseCommand) -> Any:
-        return await self._dispatch(command)
-
-    async def query(self, query: BaseQuery) -> Any:
-        return await self._dispatch(query)
-
-    def _scan(self, root_package: str) -> None:
+    @staticmethod
+    def scan(root_package: str) -> None:
+        """
+        Automatically discovers and registers all handlers in the specified package.
+        """
+        # 1. Recursive module discovery
         pkg = importlib.import_module(root_package)
         for _, name, _ in pkgutil.walk_packages(pkg.__path__, prefix=root_package + "."):
             try:
                 importlib.import_module(name)
             except Exception:
-                pass
-
-    def _resolve_handler(self, handler_class: type) -> Any:
-        hints = get_type_hints(handler_class.__init__)
-        kwargs = {}
-        for name, hint in hints.items():
-            if name == "return":
                 continue
-            if hint in self._service_registry:
-                factory = self._service_registry[hint]
-                kwargs[name] = factory() if callable(factory) else factory
-        return handler_class(**kwargs)
+
+        # 2. Handler registration via type hint inspection
+        from .commands import BaseCommandHandler
+        from .queries import BaseQueryHandler
+
+        for base_cls, arg_name in [(BaseCommandHandler, "command"), (BaseQueryHandler, "query")]:
+            for subclass in Mediator._get_all_subclasses(base_cls):
+                if inspect.isabstract(subclass):
+                    continue
+
+                try:
+                    hints = get_type_hints(subclass.handle)
+                    req_type = hints.get(arg_name)
+                    if req_type and req_type is not inspect.Parameter.empty:
+                        _global_registry.register(req_type, subclass)
+                except (TypeError, NameError):
+                    # Skip classes with unresolved type hints
+                    continue
+
+    async def execute(self, command: BaseCommand[TResponse]) -> TResponse:
+        """Execute a command through the mediator pipeline."""
+        return await self._dispatch(command)
+
+    async def query(self, query: BaseQuery[TResponse]) -> TResponse:
+        """Execute a query through the mediator pipeline."""
+        return await self._dispatch(query)
 
     async def _dispatch(self, request: Any) -> Any:
-        handler_class = _handler_registry.get(type(request))
-        if not handler_class:
-            raise LookupError(f"No handler registered for {type(request).__name__}.")
-        handler = self._resolve_handler(handler_class)
-        
+        handler_type = _global_registry.get(type(request))
+        if not handler_type:
+            raise HandlerNotFoundError(f"No handler registered for request type: {type(request).__name__}")
+
+        # Resolve handler instance from service provider (DI Container)
+        handler = self._service_provider(handler_type)
+
+        # Core execution logic
         async def core_handler():
             return await handler.handle(request)
 
+        # Build execution pipeline from behaviors
         pipeline = core_handler
         for behavior in reversed(self._behaviors):
-            def make_step(b, next_step):
-                return lambda: b.handle(request, next_step)
-            pipeline = make_step(behavior, pipeline)
+            pipeline = self._wrap_behavior(behavior, request, pipeline)
 
         return await pipeline()
+
+    def _wrap_behavior(self, behavior: Any, request: Any, next_call: Callable) -> Callable:
+        """Wraps a behavior around the next step in the pipeline."""
+        return lambda: behavior.handle(request, next_call)
+
+    @staticmethod
+    def _get_all_subclasses(cls: type) -> set[type]:
+        """Recursively finds all subclasses of a given class."""
+        subclasses = set(cls.__subclasses__())
+        return subclasses.union([s for c in subclasses for s in Mediator._get_all_subclasses(c)])

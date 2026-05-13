@@ -12,7 +12,7 @@ from src.accounts.application.dtos.auth import (
     MfaSetup,
     TokenPair,
 )
-from src.accounts.infrastructure.module import AccountModule
+from src.accounts.application.interfaces.account_module import BaseAccountModule
 from src.api.core.responses.success import APIResponse, ResponseEnvelope
 from src.api.core.security.dependencies import get_current_account_id, get_account_module
 
@@ -50,7 +50,7 @@ def raise_http(e):
 )
 async def register_account(
     request: RegisterAccountRequest,
-    account_module: AccountModule = Depends(get_account_module),
+    account_module: BaseAccountModule = Depends(get_account_module),
 ) -> APIResponse:
     result = await account_module.execute(RegisterAccountCommand(email=request.email, password=request.password))
     return result.match(
@@ -70,7 +70,7 @@ async def register_account(
 )
 async def verify_account(
     account_id: str,
-    account_module: AccountModule = Depends(get_account_module),
+    account_module: BaseAccountModule = Depends(get_account_module),
 ) -> APIResponse:
     result = await account_module.execute(VerifyAccountCommand(account_id=account_id))
     return result.match(
@@ -92,7 +92,7 @@ async def login_for_access_token(
     request: Request,
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    account_module: AccountModule = Depends(get_account_module),
+    account_module: BaseAccountModule = Depends(get_account_module),
 ) -> APIResponse:
     ip_address = request.client.host if request.client else "unknown"
     user_agent = request.headers.get("user-agent", "unknown")
@@ -141,7 +141,7 @@ async def login_for_access_token(
 async def refresh_token(
     response: Response,
     refresh_token: str | None = Cookie(None),
-    account_module: AccountModule = Depends(get_account_module),
+    account_module: BaseAccountModule = Depends(get_account_module),
 ) -> APIResponse:
     if not refresh_token:
         raise HTTPException(
@@ -190,7 +190,7 @@ async def refresh_token(
 async def logout(
     response: Response,
     refresh_token: str | None = Cookie(None),
-    account_module: AccountModule = Depends(get_account_module),
+    account_module: BaseAccountModule = Depends(get_account_module),
 ) -> APIResponse:
     if refresh_token:
         await account_module.execute(LogoutCommand(refresh_token=refresh_token))
@@ -209,7 +209,7 @@ async def logout(
 )
 async def get_current_account(
     account_id: str = Depends(get_current_account_id),
-    account_module: AccountModule = Depends(get_account_module),
+    account_module: BaseAccountModule = Depends(get_account_module),
 ) -> APIResponse:
     result = await account_module.query(GetAccountByIdQuery(account_id=account_id))
     return result.match(
@@ -229,7 +229,7 @@ async def get_current_account(
 async def update_account(
     request: UpdateAccountRequest,
     account_id: str = Depends(get_current_account_id),
-    account_module: AccountModule = Depends(get_account_module),
+    account_module: BaseAccountModule = Depends(get_account_module),
 ) -> APIResponse:
     result = await account_module.execute(UpdateAccountCommand(account_id=account_id, update_data=request.model_dump(exclude_unset=True)))
     return result.match(
@@ -248,7 +248,7 @@ async def update_account(
 )
 async def setup_mfa(
     request: MfaSetupRequest,
-    account_module: AccountModule = Depends(get_account_module),
+    account_module: BaseAccountModule = Depends(get_account_module),
 ) -> APIResponse:
     result = await account_module.execute(SetupMfaCommand(mfa_token=request.mfa_token))
     return result.match(
@@ -266,7 +266,7 @@ async def enable_mfa(
     fastapi_request: Request,
     response: Response,
     request: MfaEnableRequest,
-    account_module: AccountModule = Depends(get_account_module),
+    account_module: BaseAccountModule = Depends(get_account_module),
 ) -> APIResponse:
     ip_address = fastapi_request.client.host if fastapi_request.client else "unknown"
     user_agent = fastapi_request.headers.get("user-agent", "unknown")
@@ -312,7 +312,7 @@ async def login_mfa(
     fastapi_request: Request,
     response: Response,
     request: MfaVerifyRequest,
-    account_module: AccountModule = Depends(get_account_module),
+    account_module: BaseAccountModule = Depends(get_account_module),
 ) -> APIResponse:
     ip_address = fastapi_request.client.host if fastapi_request.client else "unknown"
     user_agent = fastapi_request.headers.get("user-agent", "unknown")
@@ -356,7 +356,7 @@ async def login_mfa(
 async def social_login(
     provider_name: str,
     response: Response,
-    account_module: AccountModule = Depends(get_account_module),
+    account_module: BaseAccountModule = Depends(get_account_module),
 ) -> APIResponse:
     state = secrets.token_urlsafe(32)
     response.set_cookie(
@@ -387,7 +387,7 @@ async def social_callback(
     response: Response,
     code: str,
     state: str,
-    account_module: AccountModule = Depends(get_account_module),
+    account_module: BaseAccountModule = Depends(get_account_module),
 ) -> APIResponse:
     stored_state = fastapi_request.cookies.get(f"{provider_name}_auth_state")
     if not stored_state or stored_state != state:

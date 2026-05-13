@@ -2,7 +2,8 @@ import uuid
 
 from pydantic import BaseModel
 
-from ....building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from ....building_blocks.application.commands import BaseCommand
+from ....building_blocks.application.mediator import BaseCommand,  Handler
 from ...application.commands.helpers import issue_session
 from ...domain.account.value_objects.account_id import AccountId
 from ...domain.audit.audit_action import AuditAction

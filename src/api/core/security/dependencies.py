@@ -1,21 +1,21 @@
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 
+from ....accounts.application.interfaces.account_module import BaseAccountModule
 from ....accounts.application.queries.validate_token import ValidateTokenQuery
 from ....accounts.domain.session.token_errors import TokenExpiredException
-from ....accounts.infrastructure.module import AccountModule
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/accounts/token")
 
 
-async def get_account_module(request: Request) -> AccountModule:
+async def get_account_module(request: Request) -> BaseAccountModule:
     """Dependency to get the AccountModule from app state."""
     return request.app.state.account_module
 
 
 async def get_current_account_id(
     token: str = Depends(oauth2_scheme),
-    account_module: AccountModule = Depends(get_account_module),
+    account_module: BaseAccountModule = Depends(get_account_module),
 ) -> str:
     """Validate Bearer token via the AccountModule.
 

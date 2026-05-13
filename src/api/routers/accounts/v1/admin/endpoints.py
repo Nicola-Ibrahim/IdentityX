@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from src.accounts.application.dtos.account import AuthDTO
-from src.accounts.infrastructure.module import AccountModule
+from src.accounts.application.interfaces.account_module import BaseAccountModule
 from src.api.core.security.dependencies import get_current_account_id, get_account_module
 from src.api.core.utils.pagination import PaginationParams, get_pagination
 
@@ -30,7 +30,7 @@ def raise_http(e):
 )
 async def list_accounts(
     pagination: PaginationParams = Depends(get_pagination),
-    account_module: AccountModule = Depends(get_account_module),
+    account_module: BaseAccountModule = Depends(get_account_module),
 ) -> APIResponse:
     result = await account_module.query(ListAccountsQuery(limit=pagination.limit, offset=pagination.offset))
 
@@ -57,7 +57,7 @@ async def list_accounts(
 )
 async def suspend_account(
     account_id: str,
-    account_module: AccountModule = Depends(get_account_module),
+    account_module: BaseAccountModule = Depends(get_account_module),
 ) -> APIResponse:
     result = await account_module.execute(DeactivateAccountCommand(account_id=account_id))
     return result.match(
@@ -76,7 +76,7 @@ async def suspend_account(
 )
 async def activate_account(
     account_id: str,
-    account_module: AccountModule = Depends(get_account_module),
+    account_module: BaseAccountModule = Depends(get_account_module),
 ) -> APIResponse:
     result = await account_module.execute(ActivateAccountCommand(account_id=account_id))
     return result.match(
@@ -95,7 +95,7 @@ async def activate_account(
 )
 async def revoke_account_sessions(
     account_id: str,
-    account_module: AccountModule = Depends(get_account_module),
+    account_module: BaseAccountModule = Depends(get_account_module),
 ) -> None:
     result = await account_module.execute(RevokeAllSessionsCommand(account_id=account_id))
     result.match(on_success=lambda _: None, on_failure=raise_http)
@@ -108,7 +108,7 @@ async def revoke_account_sessions(
 )
 async def get_account(
     account_id: str,
-    account_module: AccountModule = Depends(get_account_module),
+    account_module: BaseAccountModule = Depends(get_account_module),
 ) -> APIResponse:
     result = await account_module.query(GetAccountByIdQuery(account_id=account_id))
     return result.match(
@@ -127,7 +127,7 @@ async def get_account(
 )
 async def delete_account(
     account_id: str,
-    account_module: AccountModule = Depends(get_account_module),
+    account_module: BaseAccountModule = Depends(get_account_module),
 ) -> None:
     result = await account_module.execute(RemoveAccountCommand(account_id=account_id))
     result.match(on_success=lambda _: None, on_failure=raise_http)

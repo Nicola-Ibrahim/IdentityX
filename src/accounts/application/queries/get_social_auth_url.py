@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 
-from ....building_blocks.application.mediator import BaseQuery, BaseQueryHandler
+from ....building_blocks.application.queries import BaseQuery
+from ....building_blocks.application.mediator import BaseQuery,  Handler
 from ..providers import SocialProviders
 
 

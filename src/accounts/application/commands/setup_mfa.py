@@ -3,7 +3,8 @@ import uuid
 import pyotp
 from pydantic import BaseModel
 
-from ....building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from ....building_blocks.application.commands import BaseCommand
+from ....building_blocks.application.mediator import BaseCommand,  Handler
 from ...domain.account.value_objects.account_id import AccountId
 from ...domain.interfaces.account_repository import BaseAccountRepository
 from ..dtos.auth import MfaSetup
