@@ -12,6 +12,10 @@ class DatabaseContainer(containers.DeclarativeContainer):
     @staticmethod
     async def _init_session_factory(settings: SQLAlchemySettings):
         factory = SQLAlchemySessionFactory(settings)
+        # Explicit connection check (Fail-Fast)
+        if not await factory.ping():
+            raise RuntimeError(f"Could not connect to Database at {settings.url}")
+
         yield factory
         await factory.dispose()
 

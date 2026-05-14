@@ -1,7 +1,7 @@
-from __future__ import annotations
 from typing import Any, Callable
-from src.buckets.database.session import SQLAlchemySessionFactory, _current_session
-from src.building_blocks.application.mediator import BaseCommand
+
+from buckets.database.session import SQLAlchemySessionFactory, _current_session
+from building_blocks.application.mediator import BaseCommand
 
 
 class TransactionScope:

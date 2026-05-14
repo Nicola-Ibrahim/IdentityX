@@ -39,8 +39,14 @@ class IdentityXStartUp:
         """Initialize all modules and shared infrastructure."""
 
         # 1. Initialize shared infrastructure resources
-        await self._db_container.init_resources()
-        await self._redis_container.init_resources()
+        db_res = self._db_container.init_resources()
+        if db_res:
+            await db_res
+
+        redis_res = self._redis_container.init_resources()
+        if redis_res:
+            await redis_res
+
         # 2. Initialize all modules
         for module in self._modules:
             module.initialize(database=self._db_container.session_factory)
@@ -53,7 +59,11 @@ class IdentityXStartUp:
             await module.stop()
 
         # Shutdown Redis infrastructure
-        await self._redis_container.shutdown_resources()
+        redis_res = self._redis_container.shutdown_resources()
+        if redis_res:
+            await redis_res
 
         # Shutdown shared database infrastructure
-        await self._db_container.shutdown_resources()
+        db_res = self._db_container.shutdown_resources()
+        if db_res:
+            await db_res

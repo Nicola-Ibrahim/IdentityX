@@ -35,6 +35,17 @@ class SQLAlchemySessionFactory:
         """Dispose the underlying engine and its connection pool."""
         await self._engine.dispose()
 
+    async def ping(self) -> bool:
+        """Verify the database connection."""
+        try:
+            from sqlalchemy import text
+
+            async with self._engine.connect() as conn:
+                await conn.execute(text("SELECT 1"))
+            return True
+        except Exception:
+            return False
+
     @staticmethod
     def get_current_session() -> AsyncSession:
         """

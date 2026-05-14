@@ -1,24 +1,8 @@
-from datetime import datetime
-from typing import Any, Generic, Optional, TypeVar
-
+from typing import Any
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
 
-from ..config import get_settings
-
-T = TypeVar("T")
-
-
-class ResponseEnvelope(BaseModel, Generic[T]):
-    """Standardized API response envelope for documentation and validation"""
-
-    api_version: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
-    success: bool = True
-    data: T
-    meta: Optional[dict] = None
-    links: Optional[dict] = None
-    message: Optional[str] = None
+from api.core.config import get_settings
+from .schemas import ResponseSchema
 
 
 class APIResponse(JSONResponse):
@@ -37,8 +21,8 @@ class APIResponse(JSONResponse):
         status_code: int = 200,
         **kwargs,
     ):
-        # Build the content using the envelope schema for consistency
-        envelope = ResponseEnvelope(
+        # Build the content using the response schema for consistency
+        schema = ResponseSchema(
             api_version=get_settings().API_VERSION,
             data=data,
             meta=meta,
@@ -47,7 +31,7 @@ class APIResponse(JSONResponse):
         )
 
         super().__init__(
-            content=envelope.model_dump(mode="json"),
+            content=schema.model_dump(mode="json"),
             status_code=status_code,
             headers={"Content-Type": "application/json", "X-API-Version": get_settings().API_VERSION},
             **kwargs,
