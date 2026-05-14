@@ -2,24 +2,23 @@ from datetime import datetime, timedelta, timezone
 
 from pydantic import BaseModel
 
-from ....building_blocks.application.mediator import BaseCommand, BaseCommandHandler
-from ...domain.account.account import Account
-from ...domain.account.value_objects.email import Email
-from ...domain.audit.audit_action import AuditAction
-from ...domain.interfaces.account_repository import BaseAccountRepository
-from ...domain.interfaces.audit_repository import BaseAuditRepository
-from ...domain.interfaces.session_repository import BaseSessionRepository
-from ...domain.services.audit_service import AuditService
-from ...domain.session.session import Session
-from ...domain.session.value_objects.refresh_token import RefreshToken
-from ...domain.session.value_objects.session_id import SessionId
-from ..dtos.account import AuthDTO
-from ..dtos.auth import MfaChallenge, TokenPair
-from ..interfaces.jwt import TokenPayload, TokenService
-from ..interfaces.password_hasher import BasePasswordHasher
+from building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from accounts.domain.account.account import Account
+from accounts.domain.account.value_objects.email import Email
+from accounts.domain.audit.audit_action import AuditAction
+from accounts.domain.interfaces.account_repository import BaseAccountRepository
+from accounts.domain.interfaces.audit_repository import BaseAuditRepository
+from accounts.domain.interfaces.session_repository import BaseSessionRepository
+from accounts.domain.services.audit_service import AuditService
+from accounts.domain.session.session import Session
+from accounts.domain.session.value_objects.refresh_token import RefreshToken
+from accounts.domain.session.value_objects.session_id import SessionId
+from accounts.application.dtos.auth import AuthDTO, MfaChallenge, TokenPair
+from accounts.application.interfaces.jwt import TokenPayload, TokenService
+from accounts.application.interfaces.password_hasher import BasePasswordHasher
 
 
-class AuthenticateCommand(BaseCommand[AuthDTO], BaseModel):
+class AuthenticateCommand(BaseModel, BaseCommand[AuthDTO]):
     email: str
     password: str
     ip_address: str

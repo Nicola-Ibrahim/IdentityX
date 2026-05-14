@@ -21,42 +21,42 @@ class Settings(BaseSettings):
     )
 
     # --- Application Metadata ---
-    PROJECT_NAME: str = Field(..., description="Project name", examples=["IdentityX"])
-    VERSION: str = Field(..., description="Application version", examples=["1.0.0"])
+    PROJECT_NAME: str = Field("IdentityX", description="Project name", examples=["IdentityX"])
+    VERSION: str = Field("1.0.0", description="Application version", examples=["1.0.0"])
     DESCRIPTION: str = Field(
-        ..., description="API description", examples=["Modern OAuth2 / Identity Provider service."]
+        "Modern OAuth2 / Identity Provider service.", description="API description", examples=["Modern OAuth2 / Identity Provider service."]
     )
-    ENVIRONMENT: str = Field(..., description="Current environment", examples=["development", "production", "testing"])
+    ENVIRONMENT: str = Field("development", description="Current environment", examples=["development", "production", "testing"])
 
     # --- Server Config ---
-    HOST: str = Field(..., description="Binding host", examples=["0.0.0.0"])
-    PORT: int = Field(..., description="Binding port", examples=[8000])
-    WORKERS: int = Field(..., description="Number of uvicorn workers", examples=[1, 4])
-    API_VERSION: str = Field(..., description="Main API version prefix", examples=["v1"])
+    HOST: str = Field("0.0.0.0", description="Binding host", examples=["0.0.0.0"])
+    PORT: int = Field(8000, description="Binding port", examples=[8000])
+    WORKERS: int = Field(1, description="Number of uvicorn workers", examples=[1, 4])
+    API_VERSION: str = Field("v1", description="Main API version prefix", examples=["v1"])
 
     # --- Security ---
     SECRET_KEY: str = Field(
-        ...,
+        "development-secret-key-only",
         description="Secret key for crypto operations. MUST be set in environment.",
         examples=["your-ultra-secret-key"],
     )
-    CORS_ENABLED: bool = Field(..., description="Enable CORS middleware", examples=[True])
+    CORS_ENABLED: bool = Field(True, description="Enable CORS middleware", examples=[True])
     CORS_ORIGINS: List[AnyHttpUrl | str] = Field(
-        ..., description="Allowed CORS origins", examples=[["*"], ["https://example.com"]]
+        ["*"], description="Allowed CORS origins", examples=[["*"], ["https://example.com"]]
     )
-    CORS_ALLOW_CREDENTIALS: bool = Field(..., description="Allow credentials in CORS requests", examples=[True])
-    CORS_ALLOW_METHODS: List[str] = Field(..., description="Allowed CORS methods", examples=[["*"], ["GET", "POST"]])
+    CORS_ALLOW_CREDENTIALS: bool = Field(True, description="Allow credentials in CORS requests", examples=[True])
+    CORS_ALLOW_METHODS: List[str] = Field(["*"], description="Allowed CORS methods", examples=[["*"], ["GET", "POST"]])
     CORS_ALLOW_HEADERS: List[str] = Field(
-        ..., description="Allowed CORS headers", examples=[["*"], ["Content-Type", "Authorization"]]
+        ["*"], description="Allowed CORS headers", examples=[["*"], ["Content-Type", "Authorization"]]
     )
 
     # --- Logging ---
-    LOGGER_NAME: str = Field(..., description="Main logger name", examples=["identityx"])
-    LOG_LEVEL: str = Field(..., description="Global log level", examples=["INFO", "DEBUG", "ERROR"])
-    LOG_FORMAT: str = Field(..., description="Log message format", examples=["%(levelprefix)s | %(message)s"])
-    LOG_DATEFMT: str = Field(..., description="Log date format", examples=["%Y-%m-%d %H:%M:%S"])
-    LOG_USE_COLORS: bool = Field(..., description="Enable colored logs", examples=[True])
-    LOG_USE_JSON: bool = Field(..., description="Enable JSON logging for production", examples=[False])
+    LOGGER_NAME: str = Field("identityx", description="Main logger name", examples=["identityx"])
+    LOG_LEVEL: str = Field("INFO", description="Global log level", examples=["INFO", "DEBUG", "ERROR"])
+    LOG_FORMAT: str = Field("%(levelprefix)s | %(message)s", description="Log message format", examples=["%(levelprefix)s | %(message)s"])
+    LOG_DATEFMT: str = Field("%Y-%m-%d %H:%M:%S", description="Log date format", examples=["%Y-%m-%d %H:%M:%S"])
+    LOG_USE_COLORS: bool = Field(True, description="Enable colored logs", examples=[True])
+    LOG_USE_JSON: bool = Field(False, description="Enable JSON logging for production", examples=[False])
 
     @property
     def DEBUG(self) -> bool:

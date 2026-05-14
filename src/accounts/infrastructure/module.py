@@ -1,8 +1,9 @@
 from typing import Any
 
-from ...accounts.application.interfaces.account_module import BaseAccountModule
-from ...building_blocks.application.mediator import BaseCommand, BaseQuery, Mediator
-from ...building_blocks.domain.result import Result
+from building_blocks.application.mediator import BaseCommand, BaseQuery, Mediator
+from building_blocks.domain.result import Result
+
+from ..application.interfaces.account_module import BaseAccountModule
 
 
 class AccountModule(BaseAccountModule):

@@ -2,21 +2,21 @@ import uuid
 
 from pydantic import BaseModel
 
-from ....building_blocks.application.mediator import BaseCommand, BaseCommandHandler
-from ...application.dtos.account import AuthDTO
-from ...domain.account.value_objects.account_id import AccountId
-from ...domain.account.value_objects.hashed_password import HashedPassword
-from ...domain.interfaces.account_repository import BaseAccountRepository
-from ...domain.interfaces.session_repository import BaseSessionRepository
-from ..interfaces.password_hasher import BasePasswordHasher
+from building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from accounts.application.dtos.account import AccountDTO
+from accounts.domain.account.value_objects.account_id import AccountId
+from accounts.domain.account.value_objects.hashed_password import HashedPassword
+from accounts.domain.interfaces.account_repository import BaseAccountRepository
+from accounts.domain.interfaces.session_repository import BaseSessionRepository
+from accounts.application.interfaces.password_hasher import BasePasswordHasher
 
 
-class ChangePasswordCommand(BaseCommand[AuthDTO], BaseModel):
+class ChangePasswordCommand(BaseModel, BaseCommand[AccountDTO]):
     account_id: str
     new_password: str
 
 
-class ChangePasswordHandler(BaseCommandHandler[ChangePasswordCommand, AuthDTO]):
+class ChangePasswordHandler(BaseCommandHandler[ChangePasswordCommand, AccountDTO]):
     def __init__(
         self,
         account_repo: BaseAccountRepository,
@@ -27,7 +27,7 @@ class ChangePasswordHandler(BaseCommandHandler[ChangePasswordCommand, AuthDTO]):
         self._session_repo = session_repo
         self._password_hasher = password_hasher
 
-    async def handle(self, command: ChangePasswordCommand) -> AuthDTO:
+    async def handle(self, command: ChangePasswordCommand) -> AccountDTO:
         try:
             account_id_vo = AccountId.create(uuid.UUID(command.account_id))
         except (ValueError, AttributeError) as exc:
@@ -44,4 +44,4 @@ class ChangePasswordHandler(BaseCommandHandler[ChangePasswordCommand, AuthDTO]):
         await self._session_repo.revoke_all_for_account(account.id)
 
         await self._account_repo.update(account)
-        return AuthDTO.from_domain(account)
+        return AccountDTO.from_domain(account)

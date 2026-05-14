@@ -1,5 +1,3 @@
-"""Repository interface for session aggregates."""
-
 from abc import ABC, abstractmethod
 from typing import Iterable, Optional
 

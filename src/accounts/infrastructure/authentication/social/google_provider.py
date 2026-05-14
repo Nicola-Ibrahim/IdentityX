@@ -48,7 +48,7 @@ class GoogleAuthenticationProvider(BaseSocialAuthenticationProvider):
             client_secret=self._client_secret,
         ) as client:
             await client.load_server_metadata(self._metadata_url)
-            
+
             # Exchange code for token
             await client.fetch_token(
                 url=client.metadata.get("token_endpoint"),

@@ -6,29 +6,29 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_limiter.depends import RateLimiter
 from pyrate_limiter import Duration, Limiter, Rate
 
-from src.accounts.application.dtos.account import AccountDTO
-from src.accounts.application.dtos.auth import (
+from accounts.application.dtos.account import AccountDTO
+from accounts.application.dtos.auth import (
     AuthDTO,
     MfaSetup,
     TokenPair,
 )
-from src.accounts.application.interfaces.account_module import BaseAccountModule
-from src.api.core.responses.success import APIResponse, ResponseEnvelope
-from src.api.core.security.dependencies import get_current_account_id, get_account_module
+from accounts.application.interfaces.account_module import BaseAccountModule
+from api.core.responses.success import APIResponse, ResponseEnvelope
+from api.core.security.dependencies import get_current_account_id, get_account_module
 
-from src.accounts.application.commands.register_account import RegisterAccountCommand
-from src.accounts.application.commands.verify_account import VerifyAccountCommand
-from src.accounts.application.commands.authenticate import AuthenticateCommand
-from src.accounts.application.commands.refresh_session import RefreshSessionCommand
-from src.accounts.application.commands.logout import LogoutCommand
-from src.accounts.application.commands.update_account import UpdateAccountCommand
-from src.accounts.application.commands.setup_mfa import SetupMfaCommand
-from src.accounts.application.commands.verify_and_enable_mfa import VerifyAndEnableMfaCommand
-from src.accounts.application.commands.authenticate_mfa import AuthenticateMfaCommand
-from src.accounts.application.commands.social_authenticate import SocialAuthenticateCommand
+from accounts.application.commands.register_account import RegisterAccountCommand
+from accounts.application.commands.verify_account import VerifyAccountCommand
+from accounts.application.commands.authenticate import AuthenticateCommand
+from accounts.application.commands.refresh_session import RefreshSessionCommand
+from accounts.application.commands.logout import LogoutCommand
+from accounts.application.commands.update_account import UpdateAccountCommand
+from accounts.application.commands.setup_mfa import SetupMfaCommand
+from accounts.application.commands.verify_and_enable_mfa import VerifyAndEnableMfaCommand
+from accounts.application.commands.authenticate_mfa import AuthenticateMfaCommand
+from accounts.application.commands.social_authenticate import SocialAuthenticateCommand
 
-from src.accounts.application.queries.get_account_by_id import GetAccountByIdQuery
-from src.accounts.application.queries.get_social_auth_url import GetSocialAuthUrlQuery
+from accounts.application.queries.get_account_by_id import GetAccountByIdQuery
+from accounts.application.queries.get_social_auth_url import GetSocialAuthUrlQuery
 
 from .mfa_requests import MfaEnableRequest, MfaSetupRequest, MfaVerifyRequest
 from .register_account_request import RegisterAccountRequest
@@ -107,7 +107,7 @@ async def login_for_access_token(
             password=form_data.password,
             ip_address=ip_address,
             user_agent=user_agent,
-            device_hash=device_hash
+            device_hash=device_hash,
         )
     )
 
@@ -231,7 +231,9 @@ async def update_account(
     account_id: str = Depends(get_current_account_id),
     account_module: BaseAccountModule = Depends(get_account_module),
 ) -> APIResponse:
-    result = await account_module.execute(UpdateAccountCommand(account_id=account_id, update_data=request.model_dump(exclude_unset=True)))
+    result = await account_module.execute(
+        UpdateAccountCommand(account_id=account_id, update_data=request.model_dump(exclude_unset=True))
+    )
     return result.match(
         on_success=lambda dto: APIResponse(
             data=dto.model_dump(),
@@ -401,9 +403,7 @@ async def social_callback(
     user_agent = fastapi_request.headers.get("user-agent", "unknown")
 
     result = await account_module.execute(
-        SocialAuthenticateCommand(
-            provider_name=provider_name, code=code, ip_address=ip_address, user_agent=user_agent
-        )
+        SocialAuthenticateCommand(provider_name=provider_name, code=code, ip_address=ip_address, user_agent=user_agent)
     )
 
     if result.is_success:

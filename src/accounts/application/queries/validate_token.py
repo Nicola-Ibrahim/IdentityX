@@ -1,11 +1,11 @@
 from pydantic import BaseModel
 
-from ....building_blocks.application.mediator import BaseQuery, Handler
-from ....building_blocks.domain.result import Result
-from ..interfaces.jwt import TokenService
+from building_blocks.application.mediator import BaseQuery, BaseQueryHandler
+from building_blocks.domain.result import Result
+from accounts.application.interfaces.jwt import TokenService
 
 
-class ValidateTokenQuery(BaseQuery[str], BaseModel):
+class ValidateTokenQuery(BaseModel, BaseQuery[str]):
     token: str
 
 

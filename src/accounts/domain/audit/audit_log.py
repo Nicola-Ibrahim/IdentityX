@@ -1,6 +1,6 @@
 from typing import Any
 
-from ....building_blocks.domain.entity import Entity
+from building_blocks.domain.entity import Entity
 from .audit_action import AuditAction
 from .value_objects.audit_log_id import AuditLogId
 

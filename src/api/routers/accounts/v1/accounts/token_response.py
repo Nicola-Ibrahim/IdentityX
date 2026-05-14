@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from src.accounts.application.dtos.auth import TokenPair
+from accounts.application.dtos.auth import TokenPair
 
 
 class TokenResponse(BaseModel):

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, List
 from sqlalchemy import Boolean, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .....buckets.database.table import BaseSQLTable
+from buckets.database.table import BaseSQLTable
 
 if TYPE_CHECKING:
     from .external_identities import ExternalIdentityTable

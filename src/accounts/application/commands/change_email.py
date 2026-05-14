@@ -2,23 +2,23 @@ import uuid
 
 from pydantic import BaseModel
 
-from ....building_blocks.application.mediator import BaseCommand, BaseCommandHandler
-from ...domain.account.value_objects.account_id import AccountId
-from ...domain.account.value_objects.email import Email
-from ...domain.interfaces.account_repository import BaseAccountRepository
-from ..dtos.account import AuthDTO
+from building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from accounts.domain.account.value_objects.account_id import AccountId
+from accounts.domain.account.value_objects.email import Email
+from accounts.domain.interfaces.account_repository import BaseAccountRepository
+from accounts.application.dtos.account import AccountDTO
 
 
-class ChangeEmailCommand(BaseCommand[AuthDTO], BaseModel):
+class ChangeEmailCommand(BaseModel, BaseCommand[AccountDTO]):
     account_id: str
     new_email: str
 
 
-class ChangeEmailHandler(BaseCommandHandler[ChangeEmailCommand, AuthDTO]):
+class ChangeEmailHandler(BaseCommandHandler[ChangeEmailCommand, AccountDTO]):
     def __init__(self, account_repo: BaseAccountRepository):
         self._account_repo = account_repo
 
-    async def handle(self, command: ChangeEmailCommand) -> AuthDTO:
+    async def handle(self, command: ChangeEmailCommand) -> AccountDTO:
         try:
             account_id_vo = AccountId.create(uuid.UUID(command.account_id))
         except (ValueError, AttributeError) as exc:
@@ -31,4 +31,4 @@ class ChangeEmailHandler(BaseCommandHandler[ChangeEmailCommand, AuthDTO]):
         account.change_email(Email.create(command.new_email))
 
         await self._account_repo.update(account)
-        return AuthDTO.from_domain(account)
+        return AccountDTO.from_domain(account)

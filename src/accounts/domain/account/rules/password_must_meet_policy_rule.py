@@ -1,6 +1,5 @@
-"""Business rule enforcing the password strength policy."""
+from building_blocks.domain.rule import BaseBusinessRule
 
-from src.building_blocks.domain.rule import BaseBusinessRule
 
 class PasswordMustMeetPolicyRule(BaseBusinessRule):
     """Ensure a password satisfies basic strength requirements."""

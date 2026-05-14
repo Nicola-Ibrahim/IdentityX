@@ -1,9 +1,9 @@
 from pydantic import BaseModel
 
-from ...domain.account.account import Account
+from accounts.domain.account.account import Account
 
 
-class AuthDTO(BaseModel):
+class AccountDTO(BaseModel):
     id: str
     email: str
     is_verified: bool
@@ -11,7 +11,7 @@ class AuthDTO(BaseModel):
     roles: tuple[str, ...]
 
     @classmethod
-    def from_domain(cls, account: "Account") -> "AuthDTO":
+    def from_domain(cls, account: "Account") -> "AccountDTO":
         return cls(
             id=str(account.id.value),
             email=str(account.email),

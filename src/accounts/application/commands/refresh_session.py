@@ -2,20 +2,20 @@ import uuid
 
 from pydantic import BaseModel
 
-from ....building_blocks.application.mediator import BaseCommand, BaseCommandHandler
-from ...application.commands.helpers import issue_session
-from ...domain.account.value_objects.account_id import AccountId
-from ...domain.audit.audit_action import AuditAction
-from ...domain.interfaces.account_repository import BaseAccountRepository
-from ...domain.interfaces.audit_repository import BaseAuditRepository
-from ...domain.interfaces.session_repository import BaseSessionRepository
-from ...domain.services.audit_service import AuditService
-from ...domain.session.value_objects.refresh_token import RefreshToken
-from ..dtos.auth import TokenPair
-from ..interfaces.jwt import TokenService
+from building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from accounts.application.commands.helpers import issue_session
+from accounts.domain.account.value_objects.account_id import AccountId
+from accounts.domain.audit.audit_action import AuditAction
+from accounts.domain.interfaces.account_repository import BaseAccountRepository
+from accounts.domain.interfaces.audit_repository import BaseAuditRepository
+from accounts.domain.interfaces.session_repository import BaseSessionRepository
+from accounts.domain.services.audit_service import AuditService
+from accounts.domain.session.value_objects.refresh_token import RefreshToken
+from accounts.application.dtos.auth import TokenPair
+from accounts.application.interfaces.jwt import TokenService
 
 
-class RefreshSessionCommand(BaseCommand[TokenPair], BaseModel):
+class RefreshSessionCommand(BaseModel, BaseCommand[TokenPair]):
     refresh_token: str
 
 

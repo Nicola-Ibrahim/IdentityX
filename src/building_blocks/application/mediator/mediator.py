@@ -12,8 +12,10 @@ if TYPE_CHECKING:
 
 TResponse = TypeVar("TResponse")
 
+
 class HandlerRegistry:
     """Internal registry for mapping requests to their handlers."""
+
     def __init__(self):
         self._handlers: dict[type, type] = {}
 
@@ -23,16 +25,17 @@ class HandlerRegistry:
     def get(self, request_type: type) -> type | None:
         return self._handlers.get(request_type)
 
+
 # Singleton registry for global discovery
 _global_registry = HandlerRegistry()
+
 
 class Mediator:
     """
     A lightweight, enterprise-grade Mediator inspired by MediatR (C#).
     """
-    def __init__(self, 
-                 service_provider: Callable[[type], Any], 
-                 behaviors: list[Any] | None = None) -> None:
+
+    def __init__(self, service_provider: Callable[[type], Any], behaviors: list[Any] | None = None) -> None:
         self._service_provider = service_provider
         self._behaviors = behaviors or []
 
@@ -57,7 +60,7 @@ class Mediator:
             for subclass in Mediator._get_all_subclasses(base_cls):
                 if inspect.isabstract(subclass):
                     continue
-                
+
                 try:
                     hints = get_type_hints(subclass.handle)
                     req_type = hints.get(arg_name)
@@ -76,9 +79,9 @@ class Mediator:
         handler_type = _global_registry.get(type(request))
         if not handler_type:
             raise HandlerNotFoundError(f"No handler registered for request type: {type(request).__name__}")
-        
+
         handler = self._service_provider(handler_type)
-        
+
         async def core_handler():
             return await handler.handle(request)
 

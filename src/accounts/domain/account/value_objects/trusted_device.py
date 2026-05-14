@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
+
 from pydantic import Field
-from .....building_blocks.domain.value_object import ValueObject
+
+from building_blocks.domain.value_object import ValueObject
 
 
 class TrustedDevice(ValueObject):
@@ -8,6 +10,7 @@ class TrustedDevice(ValueObject):
     Value object representing a device trusted for MFA bypass.
     Identified by its hash rather than a unique ID.
     """
+
     device_hash: str
     user_agent: str
     ip_address: str

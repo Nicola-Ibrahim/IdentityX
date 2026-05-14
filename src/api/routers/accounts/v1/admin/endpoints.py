@@ -1,18 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from src.accounts.application.dtos.account import AuthDTO
-from src.accounts.application.interfaces.account_module import BaseAccountModule
-from src.api.core.security.dependencies import get_current_account_id, get_account_module
-from src.api.core.utils.pagination import PaginationParams, get_pagination
+from accounts.application.commands.activate_account import ActivateAccountCommand
+from accounts.application.commands.remove_account import RemoveAccountCommand
+from accounts.application.commands.revoke_all_sessions import RevokeAllSessionsCommand
+from accounts.application.commands.deactivate_account import DeactivateAccountCommand
+from accounts.application.dtos.account import AccountDTO
+from accounts.application.interfaces.account_module import BaseAccountModule
+from accounts.application.queries.get_account_by_id import GetAccountByIdQuery
+from accounts.application.queries.list_accounts import ListAccountsQuery
+from api.core.security.dependencies import get_account_module, get_current_account_id
+from api.core.utils.pagination import PaginationParams, get_pagination
 
-from src.accounts.application.queries.list_accounts import ListAccountsQuery
-from src.accounts.application.queries.get_account_by_id import GetAccountByIdQuery
-from src.accounts.application.commands.deactivate import DeactivateAccountCommand
-from src.accounts.application.commands.activate import ActivateAccountCommand
-from src.accounts.application.commands.revoke_all_sessions import RevokeAllSessionsCommand
-from src.accounts.application.commands.remove import RemoveAccountCommand
-
-from ..core.responses.success import APIResponse, ResponseEnvelope
+from api.core.responses.success import APIResponse, ResponseEnvelope
 
 admin_router = APIRouter(
     prefix="/admin/accounts", tags=["admin-accounts"], dependencies=[Depends(get_current_account_id)]
@@ -25,7 +24,7 @@ def raise_http(e):
 
 @admin_router.get(
     "/",
-    response_model=ResponseEnvelope[list[AuthDTO]],
+    response_model=ResponseEnvelope[list[AccountDTO]],
     summary="List all accounts",
 )
 async def list_accounts(
@@ -52,7 +51,7 @@ async def list_accounts(
 
 @admin_router.post(
     "/{account_id}/suspend",
-    response_model=ResponseEnvelope[AuthDTO],
+    response_model=ResponseEnvelope[AccountDTO],
     summary="Suspend an account",
 )
 async def suspend_account(
@@ -71,7 +70,7 @@ async def suspend_account(
 
 @admin_router.post(
     "/{account_id}/activate",
-    response_model=ResponseEnvelope[AuthDTO],
+    response_model=ResponseEnvelope[AccountDTO],
     summary="Activate a suspended account",
 )
 async def activate_account(
@@ -103,7 +102,7 @@ async def revoke_account_sessions(
 
 @admin_router.get(
     "/{account_id}",
-    response_model=ResponseEnvelope[AuthDTO],
+    response_model=ResponseEnvelope[AccountDTO],
     summary="Retrieve a single account",
 )
 async def get_account(

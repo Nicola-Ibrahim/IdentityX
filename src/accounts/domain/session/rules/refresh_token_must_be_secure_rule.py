@@ -1,4 +1,4 @@
-from src.building_blocks.domain.rule import BaseBusinessRule
+from building_blocks.domain.rule import BaseBusinessRule
 
 
 class RefreshTokenMustBeSecureRule(BaseBusinessRule):

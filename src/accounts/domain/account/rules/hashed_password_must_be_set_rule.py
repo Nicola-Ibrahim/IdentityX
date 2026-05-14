@@ -1,6 +1,5 @@
-"""Rule ensuring hashed passwords are non-empty."""
+from building_blocks.domain.rule import BaseBusinessRule
 
-from src.building_blocks.domain.rule import BaseBusinessRule
 
 class HashedPasswordMustBeSetRule(BaseBusinessRule):
     """Ensure the hashed password string is present."""

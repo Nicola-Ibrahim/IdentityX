@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from src.accounts.application.interfaces.account_module import BaseAccountModule
-from src.accounts.application.queries.get_jwks import GetJwksQuery
-from src.api.core.security.dependencies import get_account_module
+from accounts.application.interfaces.account_module import BaseAccountModule
+from accounts.application.queries.get_jwks import GetJwksQuery
+from api.core.security.dependencies import get_account_module
 
 router = APIRouter(tags=["discovery"])
 
@@ -18,7 +18,7 @@ async def get_jwks(
     Exposes the public key(s) in JWKS format for token verification by resource servers.
     """
     result = await account_module.query(GetJwksQuery())
-    
+
     return result.match(
         on_success=lambda jwk: {"keys": [jwk]},
         on_failure=raise_http,

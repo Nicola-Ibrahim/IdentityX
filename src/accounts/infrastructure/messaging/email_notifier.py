@@ -1,4 +1,4 @@
-from ...application.interfaces import BaseNotificationService
+from accounts.application.interfaces import BaseNotificationService
 
 
 class ConsoleNotificationService(BaseNotificationService):  # type: ignore[misc]

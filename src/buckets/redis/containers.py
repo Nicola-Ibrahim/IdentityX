@@ -12,11 +12,11 @@ class RedisContainer(containers.DeclarativeContainer):
     async def _init_redis_client(settings: RedisSettings):
         factory = RedisClientFactory(settings)
         client = factory()
-        
+
         # Health check: Fail fast if Redis is unreachable
         if not await factory.ping():
             raise RuntimeError(f"Could not connect to Redis at {settings.REDIS_URL}")
-            
+
         yield client
         await factory.close()
 

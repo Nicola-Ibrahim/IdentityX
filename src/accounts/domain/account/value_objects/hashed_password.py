@@ -1,6 +1,7 @@
 from typing import Self
 
-from .....building_blocks.domain.value_object import ValueObject
+from building_blocks.domain.value_object import ValueObject
+
 from ..rules.hashed_password_must_be_set_rule import HashedPasswordMustBeSetRule
 
 

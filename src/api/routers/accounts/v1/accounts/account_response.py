@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr
 
-from src.modules.accounts.domain.account import Account
+from accounts.domain.account import Account
 
 
 class AccountResponse(BaseModel):

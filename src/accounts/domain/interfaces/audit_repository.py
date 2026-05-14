@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
+
 from ..audit.audit_log import AuditLog
+
 
 class BaseAuditRepository(ABC):
     @abstractmethod

@@ -1,4 +1,4 @@
-from ....building_blocks.domain.exceptions import DomainError
+from building_blocks.domain.exceptions import DomainError
 
 
 class TokenException(DomainError):

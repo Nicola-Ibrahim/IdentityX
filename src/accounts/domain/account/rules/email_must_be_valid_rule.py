@@ -1,9 +1,9 @@
-"""Business rule ensuring an email address looks valid."""
-
 import re
-from src.building_blocks.domain.rule import BaseBusinessRule
+
+from building_blocks.domain.rule import BaseBusinessRule
 
 _EMAIL_REGEX = re.compile(r"^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,}$")
+
 
 class EmailMustBeValidRule(BaseBusinessRule):
     """Check that the supplied email matches a simple regex pattern."""

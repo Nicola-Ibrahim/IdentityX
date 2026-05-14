@@ -3,7 +3,7 @@ import hashlib
 import hmac
 import os
 
-from ...application.interfaces import BasePasswordHasher
+from accounts.application.interfaces import BasePasswordHasher
 
 
 class PBKDF2PasswordHasher(BasePasswordHasher):  # type: ignore[misc]

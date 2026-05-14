@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from .rule import BaseBusinessRule
 
+
 @dataclass(eq=False)
 class DomainException(Exception):
     """Base exception for domain-level errors."""
@@ -13,7 +14,9 @@ class DomainException(Exception):
     def __post_init__(self) -> None:
         super().__init__(self.message)
 
+
 DomainError = DomainException
+
 
 class BusinessRuleValidationException(DomainException):
     """Raised when a :class:`BaseBusinessRule` evaluation fails."""
@@ -22,13 +25,13 @@ class BusinessRuleValidationException(DomainException):
         self.rule = rule
         super().__init__(message=rule.message, code=rule.code, error_type=rule.error_type)
 
+
 class EntityNotFoundException(DomainException):
     """Raised when an aggregate or entity cannot be found."""
 
     def __init__(self, message: str = "Entity not found."):
-        super().__init__(
-            message=message, code="EntityNotFound", error_type="EntityNotFound", status_code=404
-        )
+        super().__init__(message=message, code="EntityNotFound", error_type="EntityNotFound", status_code=404)
+
 
 class RepositoryException(DomainException):
     """Raised when the infrastructure layer reports a repository problem."""

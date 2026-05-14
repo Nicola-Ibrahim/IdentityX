@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from pydantic import BaseModel
 
+
 class BaseBusinessRule(ABC, BaseModel):
     """Base type for business rules enforced by entities and value objects."""
 

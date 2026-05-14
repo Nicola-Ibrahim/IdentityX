@@ -1,5 +1,6 @@
 from fastapi import Request
 
+
 async def get_email_key(request: Request) -> str:
     """
     Custom key function for rate limiting by email address in the request body.

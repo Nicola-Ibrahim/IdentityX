@@ -4,7 +4,9 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
-from .....buckets.database.repository import SQLBaseRepository
+from buckets.database.repository import SQLBaseRepository
+from building_blocks.infrastructure.persistance.exceptions import RecordConflictError, RecordNotFoundError
+
 from ....domain.account.account import Account
 from ....domain.account.enums.account_role import AccountRole
 from ....domain.account.value_objects.account_id import AccountId
@@ -16,7 +18,6 @@ from ....domain.account.value_objects.session_id import SessionId
 from ....domain.account.value_objects.status import Status
 from ....domain.account.value_objects.trusted_device import TrustedDevice
 from ....domain.interfaces.account_repository import BaseAccountRepository
-from .....building_blocks.infrastructure.persistance.exceptions import RecordNotFoundError, RecordConflictError
 from ..orm.models import AccountTable, ExternalIdentityTable, TrustedDeviceTable
 
 

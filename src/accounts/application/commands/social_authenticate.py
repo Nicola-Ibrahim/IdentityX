@@ -1,21 +1,21 @@
 from pydantic import BaseModel
 
-from ....building_blocks.application.mediator import BaseCommand, BaseCommandHandler
-from ...domain.account.account import Account
-from ...domain.account.value_objects.email import Email
-from ...domain.account.value_objects.external_identity import ExternalIdentity
-from ...domain.audit.audit_action import AuditAction
-from ...domain.interfaces.account_repository import BaseAccountRepository
-from ...domain.interfaces.audit_repository import BaseAuditRepository
-from ...domain.interfaces.session_repository import BaseSessionRepository
-from ...domain.services.audit_service import AuditService
-from ..commands.helpers import issue_session
-from ..dtos.account import AuthDTO
-from ..interfaces.jwt import TokenService
-from ..providers import SocialProviders
+from building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from accounts.domain.account.account import Account
+from accounts.domain.account.value_objects.email import Email
+from accounts.domain.account.value_objects.external_identity import ExternalIdentity
+from accounts.domain.audit.audit_action import AuditAction
+from accounts.domain.interfaces.account_repository import BaseAccountRepository
+from accounts.domain.interfaces.audit_repository import BaseAuditRepository
+from accounts.domain.interfaces.session_repository import BaseSessionRepository
+from accounts.domain.services.audit_service import AuditService
+from accounts.application.commands.helpers import issue_session
+from accounts.application.dtos.auth import AuthDTO
+from accounts.application.interfaces.jwt import TokenService
+from accounts.application.providers import SocialProviders
 
 
-class SocialAuthenticateCommand(BaseCommand[AuthDTO], BaseModel):
+class SocialAuthenticateCommand(BaseModel, BaseCommand[AuthDTO]):
     provider_name: str
     code: str
     ip_address: str

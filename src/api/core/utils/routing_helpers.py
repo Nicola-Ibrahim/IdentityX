@@ -12,9 +12,9 @@ from .import_helpers import extract_members_from_package
 # ``APIRouter`` into a single list for registration.  The user-centric
 # routes now live exclusively under ``accounts``.
 PACKAGE_PATHS = [
-    "src.api.routers.accounts.v1.accounts",
-    "src.api.routers.accounts.v1.admin",
-    "src.api.routers.accounts.v1.discovery",
+    "api.routers.accounts.v1.accounts",
+    "api.routers.accounts.v1.admin",
+    "api.routers.accounts.v1.discovery",
 ]
 
 

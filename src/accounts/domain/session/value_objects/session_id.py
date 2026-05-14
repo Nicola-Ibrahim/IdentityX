@@ -1,7 +1,7 @@
 import uuid
 from typing import Self
 
-from .....building_blocks.domain.value_object import ValueObject
+from building_blocks.domain.value_object import ValueObject
 
 
 class SessionId(ValueObject):

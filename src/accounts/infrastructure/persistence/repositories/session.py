@@ -3,14 +3,15 @@ from typing import Iterable
 from sqlalchemy import select, update
 from sqlalchemy.orm import joinedload
 
-from .....buckets.database.repository import SQLBaseRepository
+from buckets.database.repository import SQLBaseRepository
+from building_blocks.infrastructure.persistance.exceptions import RecordNotFoundError
+
 from ....domain.interfaces.session_repository import BaseSessionRepository
 from ....domain.session.session import Session
 from ....domain.session.value_objects.account_id import AccountId
 from ....domain.session.value_objects.refresh_token import RefreshToken
 from ....domain.session.value_objects.session_id import SessionId
 from ....domain.session.value_objects.session_status import SessionStatus
-from .....building_blocks.infrastructure.persistance.exceptions import RecordNotFoundError
 from ..orm.models import SessionTable
 
 

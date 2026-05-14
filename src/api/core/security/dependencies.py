@@ -1,9 +1,9 @@
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 
-from ....accounts.application.interfaces.account_module import BaseAccountModule
-from ....accounts.application.queries.validate_token import ValidateTokenQuery
-from ....accounts.domain.session.token_errors import TokenExpiredException
+from accounts.application.interfaces.account_module import BaseAccountModule
+from accounts.application.queries.validate_token import ValidateTokenQuery
+from accounts.domain.session.token_errors import TokenExpiredException
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/accounts/token")
 

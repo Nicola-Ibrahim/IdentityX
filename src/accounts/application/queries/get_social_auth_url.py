@@ -1,10 +1,10 @@
 from pydantic import BaseModel
 
-from ....building_blocks.application.mediator import BaseQuery, Handler
-from ..providers import SocialProviders
+from building_blocks.application.mediator import BaseQuery, BaseQueryHandler
+from accounts.application.providers import SocialProviders
 
 
-class GetSocialAuthUrlQuery(BaseQuery[str], BaseModel):
+class GetSocialAuthUrlQuery(BaseModel, BaseQuery[str]):
     provider_name: str
     state: str
 

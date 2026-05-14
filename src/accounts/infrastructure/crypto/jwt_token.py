@@ -6,8 +6,8 @@ from typing import Any
 import jwt
 from cryptography.hazmat.primitives import serialization
 
-from ...application.interfaces.jwt import TokenPayload, TokenService, ValidatedClaims
-from ...domain.session.token_errors import (
+from accounts.application.interfaces.jwt import TokenPayload, TokenService, ValidatedClaims
+from accounts.domain.session.token_errors import (
     TokenExpiredException,
     TokenInvalidException,
 )

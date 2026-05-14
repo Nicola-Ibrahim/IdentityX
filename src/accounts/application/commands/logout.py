@@ -1,12 +1,12 @@
 from pydantic import BaseModel
 
-from ....building_blocks.application.mediator import BaseCommand, BaseCommandHandler
-from ...domain.interfaces.session_repository import BaseSessionRepository
-from ...domain.session.value_objects.refresh_token import RefreshToken
-from ..interfaces.jwt import TokenService
+from building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from accounts.domain.interfaces.session_repository import BaseSessionRepository
+from accounts.domain.session.value_objects.refresh_token import RefreshToken
+from accounts.application.interfaces.jwt import TokenService
 
 
-class LogoutCommand(BaseCommand[None], BaseModel):
+class LogoutCommand(BaseModel, BaseCommand[None]):
     refresh_token: str
 
 

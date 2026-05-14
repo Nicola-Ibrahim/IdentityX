@@ -1,9 +1,9 @@
 from typing import Self
 
-from .accounts.infrastructure.configuration.startup import AccountsStartUp
-from .api.core.config import get_settings
-from .buckets.database import DatabaseContainer
-from .buckets.redis import RedisContainer
+from accounts.infrastructure.configuration.startup import AccountsStartUp
+from api.core.config import get_settings
+from buckets.database import DatabaseContainer
+from buckets.redis import RedisContainer
 
 
 class IdentityXStartUp:

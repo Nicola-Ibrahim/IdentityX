@@ -7,6 +7,7 @@ class BaseRepositoryException(Exception):
         self.error_type = error_type
         super().__init__(description)
 
+
 class RecordNotFoundError(BaseRepositoryException):
     def __init__(self, identifier: str):
         super().__init__(
@@ -14,6 +15,7 @@ class RecordNotFoundError(BaseRepositoryException):
             description=f"Record with identifier {identifier} not found in persistence.",
             error_type="NotFound",
         )
+
 
 class RecordConflictError(BaseRepositoryException):
     def __init__(self, identifier: str):
