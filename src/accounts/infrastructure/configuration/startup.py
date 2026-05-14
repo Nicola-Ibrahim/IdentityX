@@ -64,7 +64,7 @@ class AccountsStartUp:
 
             # 4. Configure the Mediator
             # Scan for all handlers in the project
-            Mediator.scan("src")
+            Mediator.scan("accounts")
 
             mediator = Mediator(service_provider=service_provider, behaviors=[TransactionBehavior(session_factory)])
 
