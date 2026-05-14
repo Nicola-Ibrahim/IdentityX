@@ -28,4 +28,10 @@ class VerifyAccountHandler(BaseCommandHandler[VerifyAccountCommand, AccountDTO])
 
         account.verify()
         await self._account_repo.update(account)
-        return AccountDTO.from_domain(account)
+        return AccountDTO(
+            id=str(account.id.value),
+            email=str(account.email),
+            is_verified=account.is_verified,
+            is_active=account.is_active,
+            roles=tuple(r.value for r in account.roles),
+        )

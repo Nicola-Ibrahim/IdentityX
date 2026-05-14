@@ -1,6 +1,6 @@
 from typing import Iterable
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
@@ -194,11 +194,7 @@ class SQLBaseAccountRepository(SQLBaseRepository[AccountTable], BaseAccountRepos
         result = await self.session.execute(stmt)
         return result.first() is not None
 
-    async def list_accounts(self, limit: int = 100, offset: int = 0) -> tuple[Iterable[Account], int]:
-        count_stmt = select(func.count()).select_from(AccountTable)
-        total_result = await self.session.execute(count_stmt)
-        total_count = total_result.scalar_one()
-
+    async def list_accounts(self, limit: int = 100, offset: int = 0) -> Iterable[any]:
         stmt = (
             select(AccountTable)
             .options(selectinload(AccountTable.external_identities), selectinload(AccountTable.trusted_devices))
@@ -207,8 +203,7 @@ class SQLBaseAccountRepository(SQLBaseRepository[AccountTable], BaseAccountRepos
             .offset(offset)
         )
         result = await self.session.execute(stmt)
-        records = result.scalars().all()
-        return [self._to_domain(record) for record in records], total_count
+        return result.scalars().all()
 
     async def remove(self, account_id: AccountId) -> None:
         stmt = select(AccountTable).filter(AccountTable.id == account_id.value)

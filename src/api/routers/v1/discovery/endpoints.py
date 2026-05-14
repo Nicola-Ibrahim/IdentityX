@@ -10,11 +10,7 @@ from .responses import JWKSResponse
 router = APIRouter(prefix="", tags=["discovery"])
 
 
-@router.get(
-    "/.well-known/jwks.json", 
-    response_model=SuccessResponse[JWKSResponse],
-    summary="Get JSON Web Key Set"
-)
+@router.get("/.well-known/jwks.json", response_model=SuccessResponse[JWKSResponse], summary="Get JSON Web Key Set")
 async def get_jwks(
     account_module: BaseAccountModule = Depends(get_account_module),
 ) -> APIResponse:
@@ -25,9 +21,6 @@ async def get_jwks(
     result = await account_module.query(GetJwksQuery())
 
     return result.match(
-        on_success=lambda jwk: APIResponse(
-            data={"keys": [jwk]}, 
-            status_code=status.HTTP_200_OK
-        ),
+        on_success=lambda jwk: APIResponse(data={"keys": [jwk]}, status_code=status.HTTP_200_OK),
         on_failure=raise_http,
     )

@@ -25,7 +25,7 @@ def import_modules_from_package(package_name: str, recursive: bool = False) -> G
         full_module_name = f"{package_name}.{module_name}"
         module = importlib.import_module(full_module_name)
         yield module
-        
+
         if recursive and is_pkg:
             yield from import_modules_from_package(full_module_name, recursive=True)
 
@@ -44,10 +44,7 @@ def extract_members_from_module(
 
 
 def extract_members_from_package(
-    package_name: str, 
-    member_type: Type[T] | None = None, 
-    member_name: str | None = None,
-    recursive: bool = False
+    package_name: str, member_type: Type[T] | None = None, member_name: str | None = None, recursive: bool = False
 ) -> Generator[T, None, None]:
     """
     Imports all modules from a package and retrieves specified members from them.

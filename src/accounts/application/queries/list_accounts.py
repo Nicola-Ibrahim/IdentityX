@@ -5,16 +5,25 @@ from accounts.domain.interfaces.account_repository import BaseAccountRepository
 from accounts.application.dtos.account import AccountDTO
 
 
-class ListAccountsQuery(BaseQuery[tuple[tuple[AccountDTO, ...], int]], BaseModel):
+class ListAccountsQuery(BaseQuery[tuple[AccountDTO, ...]], BaseModel):
     limit: int = 100
     offset: int = 0
 
 
-class ListAccountsHandler(BaseQueryHandler[ListAccountsQuery, tuple[tuple[AccountDTO, ...], int]]):
+class ListAccountsHandler(BaseQueryHandler[ListAccountsQuery, tuple[AccountDTO, ...]]):
     def __init__(self, account_repo: BaseAccountRepository):
         self._account_repo = account_repo
 
-    async def handle(self, query: ListAccountsQuery) -> tuple[tuple[AccountDTO, ...], int]:
-        accounts_iter, total_count = await self._account_repo.list_accounts(limit=query.limit, offset=query.offset)
-        accounts = [AccountDTO.from_domain(account) for account in accounts_iter]
-        return tuple(accounts), total_count
+    async def handle(self, query: ListAccountsQuery) -> tuple[AccountDTO, ...]:
+        records = await self._account_repo.list_accounts(limit=query.limit, offset=query.offset)
+        accounts = [
+            AccountDTO(
+                id=str(record.id),
+                email=record.email,
+                is_verified=record.is_verified,
+                is_active=record.is_active,
+                roles=tuple(r.role for r in record.roles) if hasattr(record, "roles") else (),
+            )
+            for record in records
+        ]
+        return tuple(accounts)

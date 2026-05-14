@@ -1,14 +1,14 @@
 from pydantic import BaseModel
 
-from building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from accounts.application.dtos.account import AccountDTO
+from accounts.application.interfaces.notification_service import BaseNotificationService
+from accounts.application.interfaces.password_hasher import BasePasswordHasher
 from accounts.domain.account.account import Account
 from accounts.domain.account.value_objects.email import Email
 from accounts.domain.account.value_objects.hashed_password import HashedPassword
 from accounts.domain.account.value_objects.password import Password
 from accounts.domain.interfaces.account_repository import BaseAccountRepository
-from accounts.application.dtos.account import AccountDTO
-from accounts.application.interfaces.notification_service import BaseNotificationService
-from accounts.application.interfaces.password_hasher import BasePasswordHasher
+from building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 
 
 class RegisterAccountCommand(BaseModel, BaseCommand[AccountDTO]):
@@ -34,4 +34,10 @@ class RegisterAccountHandler(BaseCommandHandler[RegisterAccountCommand, AccountD
         account = Account.register(email=email_vo, password=hashed)
         await self._account_repo.add(account)
         await self._notification_service.send_welcome_email(str(email_vo))
-        return AccountDTO.from_domain(account)
+        return AccountDTO(
+            id=str(account.id.value),
+            email=str(account.email),
+            is_verified=account.is_verified,
+            is_active=account.is_active,
+            roles=tuple(r.value for r in account.roles),
+        )

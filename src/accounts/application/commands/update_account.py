@@ -33,4 +33,10 @@ class UpdateAccountHandler(BaseCommandHandler[UpdateAccountCommand, AccountDTO])
             account.change_email(Email.create(command.data["email"]))
 
         await self._account_repo.update(account)
-        return AccountDTO.from_domain(account)
+        return AccountDTO(
+            id=str(account.id.value),
+            email=str(account.email),
+            is_verified=account.is_verified,
+            is_active=account.is_active,
+            roles=tuple(r.value for r in account.roles),
+        )
