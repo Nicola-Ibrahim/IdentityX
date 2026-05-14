@@ -1,13 +1,20 @@
 from contextlib import asynccontextmanager
+
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
-from .core.config import get_settings
 from ..startup import IdentityXStartUp
 from .core import middleware
+from .core.config import get_settings
 from .core.exceptions.errors import APIError
-from .core.exceptions.handlers import global_exception_handler
+from .core.exceptions.handlers import (
+    api_exception_handler,
+    http_exception_handler,
+    system_exception_handler,
+    validation_exception_handler,
+)
 from .core.utils.routing_helpers import collect_routers
 
 
@@ -81,9 +88,10 @@ class APIFactory:
             )
 
     def _register_exception_handlers(self):
-        for error in APIError.__subclasses__():
-            self.app.add_exception_handler(error, global_exception_handler)
-        self.app.add_exception_handler(Exception, global_exception_handler)
+        self.app.add_exception_handler(APIError, api_exception_handler)
+        self.app.add_exception_handler(HTTPException, http_exception_handler)
+        self.app.add_exception_handler(RequestValidationError, validation_exception_handler)
+        self.app.add_exception_handler(Exception, system_exception_handler)
 
 
 app = APIFactory().create_app()

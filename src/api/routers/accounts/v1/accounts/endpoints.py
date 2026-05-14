@@ -7,8 +7,8 @@ from fastapi_limiter.depends import RateLimiter
 from pyrate_limiter import Duration, Limiter, Rate
 
 from accounts.application.interfaces.account_module import BaseAccountModule
-from api.core.responses import APIResponse
-from api.core.routing import StandardAPIRoute
+from api.core.responses import APIResponse, SuccessResponse
+from api.core.exceptions import raise_http
 from api.core.security.dependencies import get_current_account_id, get_account_module
 
 from accounts.application.commands.register_account import RegisterAccountCommand
@@ -40,17 +40,13 @@ from .responses import (
     SocialAuthUrlResponse,
 )
 
-router = APIRouter(prefix="/accounts", tags=["accounts"], route_class=StandardAPIRoute)
-
-
-def raise_http(e):
-    raise HTTPException(status_code=e.status_code, detail=e.message)
+router = APIRouter(prefix="/accounts", tags=["accounts"])
 
 
 @router.post(
     "/register",
     status_code=status.HTTP_201_CREATED,
-    response_model=AccountResponse,
+    response_model=SuccessResponse[AccountResponse],
     summary="Register a new account",
     dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(5, Duration.SECOND * 60))))],
 )
@@ -69,9 +65,9 @@ async def register_account(
 
 
 @router.post(
-    "/verify/{account_id}",
-    response_model=AccountResponse,
-    summary="Verify an account",
+    "/verify-email",
+    response_model=SuccessResponse[AccountResponse],
+    summary="Verify account email",
     dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(5, Duration.SECOND * 60))))],
 )
 async def verify_account(
@@ -89,9 +85,9 @@ async def verify_account(
 
 
 @router.post(
-    "/token",
-    response_model=AuthResponse,
-    summary="OAuth2 compatible token login",
+    "/login",
+    response_model=SuccessResponse[AuthResponse],
+    summary="Login to an account",
     dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(5, Duration.SECOND * 60))))],
 )
 async def login_for_access_token(
@@ -140,7 +136,7 @@ async def login_for_access_token(
 
 @router.post(
     "/token/refresh",
-    response_model=TokenResponse,
+    response_model=SuccessResponse[TokenResponse],
     summary="Refresh access token",
     dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(10, Duration.SECOND * 60))))],
 )
@@ -210,8 +206,8 @@ async def logout(
 
 @router.get(
     "/me",
-    response_model=AccountResponse,
-    summary="Retrieve the authenticated account",
+    response_model=SuccessResponse[AccountResponse],
+    summary="Get current account profile",
 )
 async def get_current_account(
     account_id: str = Depends(get_current_account_id),
@@ -229,8 +225,8 @@ async def get_current_account(
 
 @router.patch(
     "/me",
-    response_model=AccountResponse,
-    summary="Update the authenticated account",
+    response_model=SuccessResponse[AccountResponse],
+    summary="Update current account profile",
 )
 async def update_account(
     request: UpdateAccountRequest,
@@ -251,8 +247,8 @@ async def update_account(
 
 @router.post(
     "/mfa/setup",
-    response_model=MfaSetupResponse,
-    summary="Initiate MFA setup",
+    response_model=SuccessResponse[MfaSetupResponse],
+    summary="Initialize MFA setup",
 )
 async def setup_mfa(
     request: MfaSetupRequest,
@@ -267,8 +263,8 @@ async def setup_mfa(
 
 @router.post(
     "/mfa/enable",
-    response_model=AuthResponse,
-    summary="Verify and enable MFA",
+    response_model=SuccessResponse[AccountResponse],
+    summary="Enable MFA for account",
 )
 async def enable_mfa(
     fastapi_request: Request,
@@ -358,9 +354,9 @@ async def login_mfa(
 
 
 @router.get(
-    "/social/{provider_name}/login",
-    response_model=SocialAuthUrlResponse,
-    summary="Get Social OAuth2 Login URL",
+    "/social/{provider}/url",
+    response_model=SuccessResponse[SocialAuthUrlResponse],
+    summary="Get social authentication URL",
 )
 async def social_login(
     provider_name: str,
@@ -385,10 +381,10 @@ async def social_login(
     )
 
 
-@router.get(
-    "/social/{provider_name}/callback",
-    response_model=AuthResponse,
-    summary="Social OAuth2 Callback",
+@router.post(
+    "/social/{provider}/callback",
+    response_model=SuccessResponse[AuthResponse],
+    summary="Handle social authentication callback",
 )
 async def social_callback(
     provider_name: str,

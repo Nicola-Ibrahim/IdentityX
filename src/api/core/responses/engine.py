@@ -1,14 +1,16 @@
 from typing import Any
+
 from fastapi.responses import JSONResponse
 
 from api.core.config import get_settings
-from .schemas import ResponseSchema
+
+from .schemas import FailureResponse, SuccessResponse
 
 
 class APIResponse(JSONResponse):
     """
-    Standardized API response that auto-converts to JSONResponse while maintaining
-    the ResponseEnvelope structure.
+    Handles successful API responses only.
+    Strictly uses the SuccessResponse schema.
     """
 
     def __init__(
@@ -21,8 +23,7 @@ class APIResponse(JSONResponse):
         status_code: int = 200,
         **kwargs,
     ):
-        # Build the content using the response schema for consistency
-        schema = ResponseSchema(
+        schema = SuccessResponse(
             api_version=get_settings().API_VERSION,
             data=data,
             meta=meta,
@@ -34,5 +35,38 @@ class APIResponse(JSONResponse):
             content=schema.model_dump(mode="json"),
             status_code=status_code,
             headers={"Content-Type": "application/json", "X-API-Version": get_settings().API_VERSION},
+            **kwargs,
+        )
+
+
+class APIErrorResponse(JSONResponse):
+    """
+    Handles error API responses only.
+    Strictly uses the FailureResponse schema.
+    """
+
+    def __init__(
+        self,
+        *,
+        errors: list[Any],
+        message: str | None = None,
+        status_code: int = 400,
+        error_code: str = "error",
+        **kwargs,
+    ):
+        schema = FailureResponse(
+            api_version=get_settings().API_VERSION,
+            errors=errors,
+            message=message,
+        )
+
+        super().__init__(
+            content=schema.model_dump(mode="json"),
+            status_code=status_code,
+            headers={
+                "Content-Type": "application/json",
+                "X-API-Version": get_settings().API_VERSION,
+                "X-Error-Code": error_code,
+            },
             **kwargs,
         )

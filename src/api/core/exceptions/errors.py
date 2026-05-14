@@ -1,5 +1,4 @@
-from typing import Optional
-
+from typing import Optional, Any
 from fastapi import HTTPException, status
 
 
@@ -40,3 +39,16 @@ class InternalServerError(APIError):
             message=message,
             details=details,
         )
+
+
+def raise_http(e: Any) -> None:
+    """
+    Centralized helper to translate domain/module errors into APIError exceptions.
+    This triggers the global exception handler for standardized responses.
+    """
+    raise APIError(
+        status_code=getattr(e, "status_code", status.HTTP_400_BAD_REQUEST),
+        error_code=getattr(e, "error_code", "bad_request"),
+        message=getattr(e, "message", str(e)),
+        details=getattr(e, "details", None),
+    )

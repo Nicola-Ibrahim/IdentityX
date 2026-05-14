@@ -1,34 +1,29 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 
 from accounts.application.commands.activate_account import ActivateAccountCommand
+from accounts.application.commands.deactivate_account import DeactivateAccountCommand
 from accounts.application.commands.remove_account import RemoveAccountCommand
 from accounts.application.commands.revoke_all_sessions import RevokeAllSessionsCommand
-from accounts.application.commands.deactivate_account import DeactivateAccountCommand
 from accounts.application.interfaces.account_module import BaseAccountModule
 from accounts.application.queries.get_account_by_id import GetAccountByIdQuery
 from accounts.application.queries.list_accounts import ListAccountsQuery
+from api.core.exceptions import raise_http
+from api.core.responses import APIResponse, SuccessResponse
 from api.core.security.dependencies import get_account_module, get_current_account_id
 from api.core.utils.pagination import PaginationParams, get_pagination
 
-from api.core.responses import APIResponse
-from api.core.routing import StandardAPIRoute
 from ..accounts.responses import AccountResponse
 
 admin_router = APIRouter(
-    prefix="/admin/accounts", 
-    tags=["admin-accounts"], 
+    prefix="/admin/accounts",
+    tags=["admin-accounts"],
     dependencies=[Depends(get_current_account_id)],
-    route_class=StandardAPIRoute
 )
-
-
-def raise_http(e):
-    raise HTTPException(status_code=e.status_code, detail=e.message)
 
 
 @admin_router.get(
     "/",
-    response_model=list[AccountResponse],
+    response_model=SuccessResponse[list[AccountResponse]],
     summary="List all accounts",
 )
 async def list_accounts(
@@ -55,7 +50,7 @@ async def list_accounts(
 
 @admin_router.post(
     "/{account_id}/suspend",
-    response_model=AccountResponse,
+    response_model=SuccessResponse[AccountResponse],
     summary="Suspend an account",
 )
 async def suspend_account(
@@ -74,8 +69,8 @@ async def suspend_account(
 
 @admin_router.post(
     "/{account_id}/activate",
-    response_model=AccountResponse,
-    summary="Activate a suspended account",
+    response_model=SuccessResponse[AccountResponse],
+    summary="Activate account",
 )
 async def activate_account(
     account_id: str,
@@ -106,8 +101,8 @@ async def revoke_account_sessions(
 
 @admin_router.get(
     "/{account_id}",
-    response_model=AccountResponse,
-    summary="Retrieve a single account",
+    response_model=SuccessResponse[AccountResponse],
+    summary="Get account details",
 )
 async def get_account(
     account_id: str,

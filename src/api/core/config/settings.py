@@ -24,9 +24,13 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = Field("IdentityX", description="Project name", examples=["IdentityX"])
     VERSION: str = Field("1.0.0", description="Application version", examples=["1.0.0"])
     DESCRIPTION: str = Field(
-        "Modern OAuth2 / Identity Provider service.", description="API description", examples=["Modern OAuth2 / Identity Provider service."]
+        "Modern OAuth2 / Identity Provider service.",
+        description="API description",
+        examples=["Modern OAuth2 / Identity Provider service."],
     )
-    ENVIRONMENT: str = Field("development", description="Current environment", examples=["development", "production", "testing"])
+    ENVIRONMENT: str = Field(
+        "development", description="Current environment", examples=["development", "production", "testing"]
+    )
 
     # --- Server Config ---
     HOST: str = Field("0.0.0.0", description="Binding host", examples=["0.0.0.0"])
@@ -53,7 +57,9 @@ class Settings(BaseSettings):
     # --- Logging ---
     LOGGER_NAME: str = Field("identityx", description="Main logger name", examples=["identityx"])
     LOG_LEVEL: str = Field("INFO", description="Global log level", examples=["INFO", "DEBUG", "ERROR"])
-    LOG_FORMAT: str = Field("%(levelprefix)s | %(message)s", description="Log message format", examples=["%(levelprefix)s | %(message)s"])
+    LOG_FORMAT: str = Field(
+        "%(levelprefix)s | %(message)s", description="Log message format", examples=["%(levelprefix)s | %(message)s"]
+    )
     LOG_DATEFMT: str = Field("%Y-%m-%d %H:%M:%S", description="Log date format", examples=["%Y-%m-%d %H:%M:%S"])
     LOG_USE_COLORS: bool = Field(True, description="Enable colored logs", examples=[True])
     LOG_USE_JSON: bool = Field(False, description="Enable JSON logging for production", examples=[False])
