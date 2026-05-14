@@ -8,8 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from ..startup import IdentityXStartUp
 from .core import middleware
 from .core.config import get_settings
-from .core.exceptions.errors import APIError
-from .core.exceptions.handlers import (
+from .core.exceptions import (
+    APIError,
     api_exception_handler,
     http_exception_handler,
     system_exception_handler,

@@ -14,14 +14,14 @@ from api.core.utils.pagination import PaginationParams, get_pagination
 
 from ..accounts.responses import AccountResponse
 
-admin_router = APIRouter(
-    prefix="/admin/accounts",
-    tags=["admin-accounts"],
+router = APIRouter(
+    prefix="/admin",
+    tags=["admin"],
     dependencies=[Depends(get_current_account_id)],
 )
 
 
-@admin_router.get(
+@router.get(
     "/",
     response_model=SuccessResponse[list[AccountResponse]],
     summary="List all accounts",
@@ -48,7 +48,7 @@ async def list_accounts(
     )
 
 
-@admin_router.post(
+@router.post(
     "/{account_id}/suspend",
     response_model=SuccessResponse[AccountResponse],
     summary="Suspend an account",
@@ -67,7 +67,7 @@ async def suspend_account(
     )
 
 
-@admin_router.post(
+@router.post(
     "/{account_id}/activate",
     response_model=SuccessResponse[AccountResponse],
     summary="Activate account",
@@ -86,7 +86,7 @@ async def activate_account(
     )
 
 
-@admin_router.post(
+@router.post(
     "/{account_id}/revoke-sessions",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Revoke all sessions for an account",
@@ -99,7 +99,7 @@ async def revoke_account_sessions(
     result.match(on_success=lambda _: None, on_failure=raise_http)
 
 
-@admin_router.get(
+@router.get(
     "/{account_id}",
     response_model=SuccessResponse[AccountResponse],
     summary="Get account details",
@@ -118,7 +118,7 @@ async def get_account(
     )
 
 
-@admin_router.delete(
+@router.delete(
     "/{account_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete an account",
