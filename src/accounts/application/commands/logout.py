@@ -1,10 +1,10 @@
 from typing import override
 from pydantic import BaseModel
 
-from building_blocks.application.mediator import BaseCommand, BaseCommandHandler
-from accounts.domain.interfaces.session_repository import BaseSessionRepository
-from accounts.domain.session.value_objects.refresh_token import RefreshToken
-from accounts.application.interfaces.jwt import TokenService
+from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from src.accounts.domain.interfaces.session_repository import BaseSessionRepository
+from src.accounts.domain.session.value_objects.refresh_token import RefreshToken
+from src.accounts.application.interfaces.jwt import TokenService
 
 
 class LogoutCommand(BaseModel, BaseCommand[None]):

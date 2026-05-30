@@ -1,8 +1,8 @@
 from typing import Any
 
-from building_blocks.domain.entity import Entity
-from .audit_action import AuditAction
-from .value_objects.audit_log_id import AuditLogId
+from src.building_blocks.domain.entity import Entity
+from src.accounts.domain.audit.audit_action import AuditAction
+from src.accounts.domain.audit.value_objects.audit_log_id import AuditLogId
 
 
 class AuditLog(Entity[AuditLogId]):

@@ -3,9 +3,9 @@ import uuid
 
 from pydantic import BaseModel
 
-from building_blocks.application.mediator import BaseCommand, BaseCommandHandler
-from accounts.domain.account.value_objects.account_id import AccountId
-from accounts.domain.interfaces.account_repository import BaseAccountRepository
+from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from src.accounts.domain.account.value_objects.account_id import AccountId
+from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
 
 
 class RemoveAccountCommand(BaseModel, BaseCommand[None]):

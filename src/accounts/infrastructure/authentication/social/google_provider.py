@@ -1,6 +1,6 @@
 from authlib.integrations.httpx_client import AsyncOAuth2Client
 from typing import Any
-from ....application.interfaces.social_provider import BaseSocialAuthenticationProvider
+from src.accounts.application.interfaces.social_provider import BaseSocialAuthenticationProvider
 
 
 class GoogleAuthenticationProvider(BaseSocialAuthenticationProvider):

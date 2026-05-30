@@ -2,16 +2,16 @@ from datetime import datetime, timedelta, timezone
 
 from pydantic import Field
 
-from building_blocks.domain.aggregate_root import AggregateRoot
-from .enums.account_role import AccountRole
-from .value_objects.account_id import AccountId
-from .value_objects.email import Email
-from .value_objects.external_identity import ExternalIdentity
-from .value_objects.hashed_password import HashedPassword
-from .value_objects.mfa_settings import MfaSettings
-from .value_objects.session_id import SessionId
-from .value_objects.status import Status
-from .value_objects.trusted_device import TrustedDevice
+from src.building_blocks.domain.aggregate_root import AggregateRoot
+from src.accounts.domain.account.enums.account_role import AccountRole
+from src.accounts.domain.account.value_objects.account_id import AccountId
+from src.accounts.domain.account.value_objects.email import Email
+from src.accounts.domain.account.value_objects.external_identity import ExternalIdentity
+from src.accounts.domain.account.value_objects.hashed_password import HashedPassword
+from src.accounts.domain.account.value_objects.mfa_settings import MfaSettings
+from src.accounts.domain.account.value_objects.session_id import SessionId
+from src.accounts.domain.account.value_objects.status import Status
+from src.accounts.domain.account.value_objects.trusted_device import TrustedDevice
 
 
 class Account(AggregateRoot[AccountId]):

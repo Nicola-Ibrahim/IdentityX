@@ -4,7 +4,7 @@ from typing import Any, TYPE_CHECKING
 from pydantic import BaseModel, ConfigDict
 
 if TYPE_CHECKING:
-    from .rule import BaseBusinessRule
+    from src.building_blocks.domain.rule import BaseBusinessRule
 
 
 class ValueObject(ABC, BaseModel):
@@ -28,7 +28,7 @@ class ValueObject(ABC, BaseModel):
 
     def check_rules(self, *rules: "BaseBusinessRule") -> None:
         """Ensure that the supplied business rules hold true."""
-        from .exceptions import BusinessRuleValidationException
+        from src.building_blocks.domain.exceptions import BusinessRuleValidationException
 
         for rule in rules:
             if rule.is_broken():

@@ -3,12 +3,12 @@ from typing import TYPE_CHECKING
 from sqlalchemy import Boolean, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from buckets.database.table import BaseSQLTable
+from src.buckets.database.table import BaseSQLTable
 
 if TYPE_CHECKING:
-    from .external_identities import ExternalIdentityTable
-    from .sessions import SessionTable
-    from .trusted_devices import TrustedDeviceTable
+    from src.accounts.infrastructure.persistence.orm.external_identities import ExternalIdentityTable
+    from src.accounts.infrastructure.persistence.orm.sessions import SessionTable
+    from src.accounts.infrastructure.persistence.orm.trusted_devices import TrustedDeviceTable
 
 
 class AccountTable(BaseSQLTable):

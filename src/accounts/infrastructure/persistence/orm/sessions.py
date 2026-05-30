@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from buckets.database.table import BaseSQLTable
+from src.buckets.database.table import BaseSQLTable
 
 if TYPE_CHECKING:
-    from .accounts import AccountTable
+    from src.accounts.infrastructure.persistence.orm.accounts import AccountTable
 
 
 class SessionTable(BaseSQLTable):

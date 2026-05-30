@@ -2,9 +2,9 @@ from typing import Any
 
 from fastapi.responses import JSONResponse
 
-from api.core.config import get_settings
+from src.api.core.config import get_settings
 
-from .schemas import FailureResponse, SuccessResponse
+from src.api.core.responses.schemas import FailureResponse, SuccessResponse
 
 
 class APIResponse(JSONResponse):

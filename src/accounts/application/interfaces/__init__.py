@@ -5,6 +5,6 @@ by the infrastructure layer, such as notification delivery and password
 hashing.
 """
 
-from .notification_service import BaseNotificationService  # noqa: F401
-from .password_hasher import BasePasswordHasher  # noqa: F401
-from .social_provider import BaseSocialAuthenticationProvider  # noqa: F401
+from src.accounts.application.interfaces.notification_service import BaseNotificationService  # noqa: F401
+from src.accounts.application.interfaces.password_hasher import BasePasswordHasher  # noqa: F401
+from src.accounts.application.interfaces.social_provider import BaseSocialAuthenticationProvider  # noqa: F401

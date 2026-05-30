@@ -1,8 +1,8 @@
 from typing import Any
 
-from ..audit.audit_action import AuditAction
-from ..audit.audit_log import AuditLog
-from ..audit.value_objects.audit_log_id import AuditLogId
+from src.accounts.domain.audit.audit_action import AuditAction
+from src.accounts.domain.audit.audit_log import AuditLog
+from src.accounts.domain.audit.value_objects.audit_log_id import AuditLogId
 
 
 class AuditService:

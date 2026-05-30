@@ -1,4 +1,4 @@
-from .interfaces.social_provider import BaseSocialAuthenticationProvider
+from src.accounts.application.interfaces.social_provider import BaseSocialAuthenticationProvider
 
 
 class SocialProviders:

@@ -3,17 +3,17 @@ import uuid
 
 from pydantic import BaseModel
 
-from building_blocks.application.mediator import BaseCommand, BaseCommandHandler
-from accounts.application.commands.helpers import issue_session
-from accounts.domain.account.value_objects.account_id import AccountId
-from accounts.domain.audit.audit_action import AuditAction
-from accounts.domain.interfaces.account_repository import BaseAccountRepository
-from accounts.domain.interfaces.audit_repository import BaseAuditRepository
-from accounts.domain.interfaces.session_repository import BaseSessionRepository
-from accounts.domain.services.audit_service import AuditService
-from accounts.domain.session.value_objects.refresh_token import RefreshToken
-from accounts.application.dtos.auth import TokenPair
-from accounts.application.interfaces.jwt import TokenService
+from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from src.accounts.application.commands.helpers import issue_session
+from src.accounts.domain.account.value_objects.account_id import AccountId
+from src.accounts.domain.audit.audit_action import AuditAction
+from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
+from src.accounts.domain.interfaces.audit_repository import BaseAuditRepository
+from src.accounts.domain.interfaces.session_repository import BaseSessionRepository
+from src.accounts.domain.services.audit_service import AuditService
+from src.accounts.domain.session.value_objects.refresh_token import RefreshToken
+from src.accounts.application.dtos.auth import TokenPair
+from src.accounts.application.interfaces.jwt import TokenService
 
 
 class RefreshSessionCommand(BaseModel, BaseCommand[TokenPair]):

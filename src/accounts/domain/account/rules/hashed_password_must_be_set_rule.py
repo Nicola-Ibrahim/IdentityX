@@ -1,4 +1,4 @@
-from building_blocks.domain.rule import BaseBusinessRule
+from src.building_blocks.domain.rule import BaseBusinessRule
 
 
 class HashedPasswordMustBeSetRule(BaseBusinessRule):

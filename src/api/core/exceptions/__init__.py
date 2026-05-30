@@ -1,5 +1,5 @@
-from .errors import APIError, InternalServerError, NotFoundError, ValidationError, raise_http
-from .handlers import (
+from src.api.core.exceptions.errors import APIError, InternalServerError, NotFoundError, ValidationError, raise_http
+from src.api.core.exceptions.handlers import (
     api_exception_handler,
     http_exception_handler,
     system_exception_handler,

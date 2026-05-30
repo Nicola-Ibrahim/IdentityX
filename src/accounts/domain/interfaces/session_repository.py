@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 
-from ..account.value_objects.account_id import AccountId
-from ..session.session import Session
-from ..session.value_objects.refresh_token import RefreshToken
-from ..session.value_objects.session_id import SessionId
+from src.accounts.domain.account.value_objects.account_id import AccountId
+from src.accounts.domain.session.session import Session
+from src.accounts.domain.session.value_objects.refresh_token import RefreshToken
+from src.accounts.domain.session.value_objects.session_id import SessionId
 
 
 class BaseSessionRepository(ABC):

@@ -1,6 +1,6 @@
 import redis.asyncio as redis
 
-from .config import RedisSettings
+from src.buckets.redis.config import RedisSettings
 
 
 class RedisClientFactory:

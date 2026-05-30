@@ -1,3 +1,3 @@
-from .account_role import AccountRole
+from src.accounts.domain.account.enums.account_role import AccountRole
 
 __all__ = ["AccountRole"]

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from .import_helpers import extract_members_from_package
+from src.api.core.utils.import_helpers import extract_members_from_package
 
 # Packages containing FastAPI routers. ``collect_routers`` will scan
 # these packages and import any members that are instances of
@@ -10,7 +10,7 @@ from .import_helpers import extract_members_from_package
 # module or subpackage added under api.routers.v1 will be
 # automatically discovered if it contains an APIRouter.
 PACKAGE_PATHS = [
-    "api.routers.v1",
+    "src.api.routers.v1",
 ]
 
 

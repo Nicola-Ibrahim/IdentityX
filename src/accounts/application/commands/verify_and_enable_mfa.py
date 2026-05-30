@@ -5,20 +5,20 @@ from datetime import datetime, timedelta, timezone
 import pyotp
 from pydantic import BaseModel
 
-from building_blocks.application.mediator import BaseCommand, BaseCommandHandler
-from accounts.domain.account.account import Account
-from accounts.domain.account.value_objects.account_id import AccountId
-from accounts.domain.audit.audit_action import AuditAction
-from accounts.domain.interfaces.account_repository import BaseAccountRepository
-from accounts.domain.interfaces.audit_repository import BaseAuditRepository
-from accounts.domain.interfaces.session_repository import BaseSessionRepository
-from accounts.domain.services.audit_service import AuditService
-from accounts.domain.session.session import Session
-from accounts.domain.session.value_objects.refresh_token import RefreshToken
-from accounts.domain.session.value_objects.session_id import SessionId
-from accounts.application.dtos.account import AccountDTO
-from accounts.application.dtos.auth import TokenPair
-from accounts.application.interfaces.jwt import TokenPayload, TokenService
+from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from src.accounts.domain.account.account import Account
+from src.accounts.domain.account.value_objects.account_id import AccountId
+from src.accounts.domain.audit.audit_action import AuditAction
+from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
+from src.accounts.domain.interfaces.audit_repository import BaseAuditRepository
+from src.accounts.domain.interfaces.session_repository import BaseSessionRepository
+from src.accounts.domain.services.audit_service import AuditService
+from src.accounts.domain.session.session import Session
+from src.accounts.domain.session.value_objects.refresh_token import RefreshToken
+from src.accounts.domain.session.value_objects.session_id import SessionId
+from src.accounts.application.dtos.account import AccountDTO
+from src.accounts.application.dtos.auth import TokenPair
+from src.accounts.application.interfaces.jwt import TokenPayload, TokenService
 
 
 class VerifyAndEnableMfaCommand(BaseModel, BaseCommand[AccountDTO]):

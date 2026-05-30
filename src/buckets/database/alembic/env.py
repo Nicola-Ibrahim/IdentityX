@@ -11,10 +11,10 @@ sys.path.append(str(BASE_DIR))
 sys.path.append(str(BASE_DIR / "src"))
 
 # Import all models here for autogenerate to work
-from src.modules.accounts.infrastructure.persistence.orm import models as account_models  # noqa: F401, E402
+from src.accounts.infrastructure.persistence.orm import models as account_models  # noqa: F401, E402
 
-from ..config import get_db_settings  # noqa: E402
-from ..table import BaseSQLTable  # noqa: E402
+from src.buckets.database.config import get_db_settings  # noqa: E402
+from src.buckets.database.table import BaseSQLTable  # noqa: E402
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

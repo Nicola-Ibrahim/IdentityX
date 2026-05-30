@@ -4,11 +4,11 @@ import uuid
 import pyotp
 from pydantic import BaseModel
 
-from building_blocks.application.mediator import BaseCommand, BaseCommandHandler
-from accounts.domain.account.value_objects.account_id import AccountId
-from accounts.domain.interfaces.account_repository import BaseAccountRepository
-from accounts.application.dtos.auth import MfaSetup
-from accounts.application.interfaces.jwt import TokenService
+from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from src.accounts.domain.account.value_objects.account_id import AccountId
+from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
+from src.accounts.application.dtos.auth import MfaSetup
+from src.accounts.application.interfaces.jwt import TokenService
 
 
 class SetupMfaCommand(BaseModel, BaseCommand[MfaSetup]):

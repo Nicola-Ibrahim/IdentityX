@@ -1,15 +1,15 @@
 from typing import override
 from pydantic import BaseModel
 
-from accounts.application.dtos.account import AccountDTO
-from accounts.application.interfaces.notification_service import BaseNotificationService
-from accounts.application.interfaces.password_hasher import BasePasswordHasher
-from accounts.domain.account.account import Account
-from accounts.domain.account.value_objects.email import Email
-from accounts.domain.account.value_objects.hashed_password import HashedPassword
-from accounts.domain.account.value_objects.password import Password
-from accounts.domain.interfaces.account_repository import BaseAccountRepository
-from building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from src.accounts.application.dtos.account import AccountDTO
+from src.accounts.application.interfaces.notification_service import BaseNotificationService
+from src.accounts.application.interfaces.password_hasher import BasePasswordHasher
+from src.accounts.domain.account.account import Account
+from src.accounts.domain.account.value_objects.email import Email
+from src.accounts.domain.account.value_objects.hashed_password import HashedPassword
+from src.accounts.domain.account.value_objects.password import Password
+from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
+from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 
 
 class RegisterAccountCommand(BaseModel, BaseCommand[AccountDTO]):

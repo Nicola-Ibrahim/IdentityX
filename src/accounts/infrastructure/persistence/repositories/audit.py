@@ -1,8 +1,8 @@
-from buckets.database.repository import SQLBaseRepository
+from src.buckets.database.repository import SQLBaseRepository
 
-from ....domain.audit.audit_log import AuditLog
-from ....domain.interfaces.audit_repository import BaseAuditRepository
-from ..orm.audit_logs import AuditLogTable
+from src.accounts.domain.audit.audit_log import AuditLog
+from src.accounts.domain.interfaces.audit_repository import BaseAuditRepository
+from src.accounts.infrastructure.persistence.orm.audit_logs import AuditLogTable
 
 
 class SQLAuditLogRepository(SQLBaseRepository[AuditLogTable], BaseAuditRepository):

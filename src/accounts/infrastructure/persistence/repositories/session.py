@@ -3,16 +3,16 @@ from typing import Iterable
 from sqlalchemy import select, update
 from sqlalchemy.orm import joinedload
 
-from buckets.database.repository import SQLBaseRepository
-from building_blocks.infrastructure.persistance.exceptions import RecordNotFoundError
+from src.buckets.database.repository import SQLBaseRepository
+from src.building_blocks.infrastructure.persistance.exceptions import RecordNotFoundError
 
-from ....domain.interfaces.session_repository import BaseSessionRepository
-from ....domain.session.session import Session
-from ....domain.session.value_objects.account_id import AccountId
-from ....domain.session.value_objects.refresh_token import RefreshToken
-from ....domain.session.value_objects.session_id import SessionId
-from ....domain.session.value_objects.session_status import SessionStatus
-from ..orm.models import SessionTable
+from src.accounts.domain.interfaces.session_repository import BaseSessionRepository
+from src.accounts.domain.session.session import Session
+from src.accounts.domain.session.value_objects.account_id import AccountId
+from src.accounts.domain.session.value_objects.refresh_token import RefreshToken
+from src.accounts.domain.session.value_objects.session_id import SessionId
+from src.accounts.domain.session.value_objects.session_status import SessionStatus
+from src.accounts.infrastructure.persistence.orm.models import SessionTable
 
 
 class SQLBaseSessionRepository(SQLBaseRepository[SessionTable], BaseSessionRepository):

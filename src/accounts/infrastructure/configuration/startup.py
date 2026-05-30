@@ -1,19 +1,19 @@
 from typing import Any, Self
 
-from accounts.application.interfaces.jwt import TokenService
-from accounts.application.interfaces.notification_service import BaseNotificationService
-from accounts.application.interfaces.password_hasher import BasePasswordHasher
-from accounts.application.providers import SocialProviders
+from src.accounts.application.interfaces.jwt import TokenService
+from src.accounts.application.interfaces.notification_service import BaseNotificationService
+from src.accounts.application.interfaces.password_hasher import BasePasswordHasher
+from src.accounts.application.providers import SocialProviders
 
 # Interfaces for registration
-from accounts.domain.interfaces.account_repository import BaseAccountRepository
-from accounts.domain.interfaces.audit_repository import BaseAuditRepository
-from accounts.domain.interfaces.session_repository import BaseSessionRepository
-from accounts.domain.services.audit_service import AuditService
-from accounts.infrastructure.configuration.containers import AccountsContainer
-from accounts.infrastructure.module import AccountModule
-from buckets.database.transaction import TransactionBehavior
-from building_blocks.application.mediator import Mediator, ServiceContainer
+from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
+from src.accounts.domain.interfaces.audit_repository import BaseAuditRepository
+from src.accounts.domain.interfaces.session_repository import BaseSessionRepository
+from src.accounts.domain.services.audit_service import AuditService
+from src.accounts.infrastructure.configuration.containers import AccountsContainer
+from src.accounts.infrastructure.module import AccountModule
+from src.buckets.database.transaction import TransactionBehavior
+from src.building_blocks.application.mediator import Mediator, ServiceContainer
 
 
 class AccountsStartUp:

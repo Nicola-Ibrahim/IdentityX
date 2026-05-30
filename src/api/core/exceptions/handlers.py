@@ -1,9 +1,9 @@
 from fastapi import HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 
-from api.core.responses import APIErrorResponse, ErrorDetail
+from src.api.core.responses import APIErrorResponse, ErrorDetail
 
-from .errors import APIError
+from src.api.core.exceptions.errors import APIError
 
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> APIErrorResponse:

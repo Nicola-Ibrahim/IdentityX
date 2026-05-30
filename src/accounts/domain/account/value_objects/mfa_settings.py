@@ -2,7 +2,7 @@ from typing import Self
 
 from pydantic import Field
 
-from building_blocks.domain.value_object import ValueObject
+from src.building_blocks.domain.value_object import ValueObject
 
 
 class MfaSettings(ValueObject):

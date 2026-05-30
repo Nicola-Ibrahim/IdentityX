@@ -1,6 +1,6 @@
 from passlib.context import CryptContext
 
-from accounts.application.interfaces import BasePasswordHasher
+from src.accounts.application.interfaces import BasePasswordHasher
 
 
 class Argon2PasswordHasher(BasePasswordHasher):  # type: ignore[misc]

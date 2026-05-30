@@ -2,7 +2,7 @@ from sqlalchemy import String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from buckets.database.table import BaseSQLTable
+from src.buckets.database.table import BaseSQLTable
 
 
 class AuditLogTable(BaseSQLTable):

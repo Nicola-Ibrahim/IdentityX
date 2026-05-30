@@ -4,21 +4,21 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
-from buckets.database.repository import SQLBaseRepository
-from building_blocks.infrastructure.persistance.exceptions import RecordConflictError, RecordNotFoundError
+from src.buckets.database.repository import SQLBaseRepository
+from src.building_blocks.infrastructure.persistance.exceptions import RecordConflictError, RecordNotFoundError
 
-from ....domain.account.account import Account
-from ....domain.account.enums.account_role import AccountRole
-from ....domain.account.value_objects.account_id import AccountId
-from ....domain.account.value_objects.email import Email
-from ....domain.account.value_objects.external_identity import ExternalIdentity
-from ....domain.account.value_objects.hashed_password import HashedPassword
-from ....domain.account.value_objects.mfa_settings import MfaSettings
-from ....domain.account.value_objects.session_id import SessionId
-from ....domain.account.value_objects.status import Status
-from ....domain.account.value_objects.trusted_device import TrustedDevice
-from ....domain.interfaces.account_repository import BaseAccountRepository
-from ..orm.models import AccountTable, ExternalIdentityTable, TrustedDeviceTable
+from src.accounts.domain.account.account import Account
+from src.accounts.domain.account.enums.account_role import AccountRole
+from src.accounts.domain.account.value_objects.account_id import AccountId
+from src.accounts.domain.account.value_objects.email import Email
+from src.accounts.domain.account.value_objects.external_identity import ExternalIdentity
+from src.accounts.domain.account.value_objects.hashed_password import HashedPassword
+from src.accounts.domain.account.value_objects.mfa_settings import MfaSettings
+from src.accounts.domain.account.value_objects.session_id import SessionId
+from src.accounts.domain.account.value_objects.status import Status
+from src.accounts.domain.account.value_objects.trusted_device import TrustedDevice
+from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
+from src.accounts.infrastructure.persistence.orm.models import AccountTable, ExternalIdentityTable, TrustedDeviceTable
 
 
 class SQLBaseAccountRepository(SQLBaseRepository[AccountTable], BaseAccountRepository):

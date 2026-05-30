@@ -3,10 +3,10 @@ from typing import override
 
 from pydantic import BaseModel
 
-from accounts.application.dtos.account import AccountDTO
-from accounts.domain.account.value_objects.account_id import AccountId
-from accounts.domain.interfaces.account_repository import BaseAccountRepository
-from building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from src.accounts.application.dtos.account import AccountDTO
+from src.accounts.domain.account.value_objects.account_id import AccountId
+from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
+from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 
 
 class ActivateAccountCommand(BaseModel, BaseCommand[AccountDTO]):

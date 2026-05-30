@@ -1,8 +1,8 @@
 from typing import override
 from pydantic import BaseModel
 
-from building_blocks.application.mediator import BaseQuery, BaseQueryHandler
-from accounts.application.providers import SocialProviders
+from src.building_blocks.application.mediator import BaseQuery, BaseQueryHandler
+from src.accounts.application.providers import SocialProviders
 
 
 class GetSocialAuthUrlQuery(BaseModel, BaseQuery[str]):

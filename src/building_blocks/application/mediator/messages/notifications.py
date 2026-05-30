@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 
+
 class BaseNotification:
     """Base class for all notifications/events."""
+
     pass
 
 

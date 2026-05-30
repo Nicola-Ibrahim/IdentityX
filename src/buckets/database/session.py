@@ -2,7 +2,7 @@ import contextvars
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from .config import SQLAlchemySettings
+from src.buckets.database.config import SQLAlchemySettings
 
 # 1. The Global Context Variable
 # This acts as our safe, request-scoped container for the session.

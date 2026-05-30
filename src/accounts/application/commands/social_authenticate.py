@@ -1,19 +1,19 @@
 from typing import override
 from pydantic import BaseModel
 
-from building_blocks.application.mediator import BaseCommand, BaseCommandHandler
-from accounts.domain.account.account import Account
-from accounts.domain.account.value_objects.email import Email
-from accounts.domain.account.value_objects.external_identity import ExternalIdentity
-from accounts.domain.audit.audit_action import AuditAction
-from accounts.domain.interfaces.account_repository import BaseAccountRepository
-from accounts.domain.interfaces.audit_repository import BaseAuditRepository
-from accounts.domain.interfaces.session_repository import BaseSessionRepository
-from accounts.domain.services.audit_service import AuditService
-from accounts.application.commands.helpers import issue_session
-from accounts.application.dtos.auth import AuthDTO
-from accounts.application.interfaces.jwt import TokenService
-from accounts.application.providers import SocialProviders
+from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from src.accounts.domain.account.account import Account
+from src.accounts.domain.account.value_objects.email import Email
+from src.accounts.domain.account.value_objects.external_identity import ExternalIdentity
+from src.accounts.domain.audit.audit_action import AuditAction
+from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
+from src.accounts.domain.interfaces.audit_repository import BaseAuditRepository
+from src.accounts.domain.interfaces.session_repository import BaseSessionRepository
+from src.accounts.domain.services.audit_service import AuditService
+from src.accounts.application.commands.helpers import issue_session
+from src.accounts.application.dtos.auth import AuthDTO
+from src.accounts.application.interfaces.jwt import TokenService
+from src.accounts.application.providers import SocialProviders
 
 
 class SocialAuthenticateCommand(BaseModel, BaseCommand[AuthDTO]):

@@ -3,10 +3,10 @@ import uuid
 
 from pydantic import BaseModel
 
-from building_blocks.application.mediator import BaseQuery, BaseQueryHandler
-from accounts.domain.account.value_objects.account_id import AccountId
-from accounts.domain.interfaces.account_repository import BaseAccountRepository
-from accounts.application.dtos.account import AccountDTO
+from src.building_blocks.application.mediator import BaseQuery, BaseQueryHandler
+from src.accounts.domain.account.value_objects.account_id import AccountId
+from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
+from src.accounts.application.dtos.account import AccountDTO
 
 
 class GetAccountByIdQuery(BaseModel, BaseQuery[AccountDTO | None]):

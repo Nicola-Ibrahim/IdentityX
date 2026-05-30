@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, status
-from accounts.application.interfaces.account_module import BaseAccountModule
-from accounts.application.queries.get_jwks import GetJwksQuery
-from api.core.security.dependencies import get_account_module
-from api.core.exceptions import raise_http
-from api.core.responses import APIResponse, SuccessResponse
-from .responses import JWKSResponse
+from src.accounts.application.interfaces.account_module import BaseAccountModule
+from src.accounts.application.queries.get_jwks import GetJwksQuery
+from src.api.core.security.dependencies import get_account_module
+from src.api.core.exceptions import raise_http
+from src.api.core.responses import APIResponse, SuccessResponse
+from src.api.routers.v1.discovery.responses import JWKSResponse
 
 
 router = APIRouter(prefix="", tags=["discovery"])

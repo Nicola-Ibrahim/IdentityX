@@ -1,6 +1,6 @@
-from .commands import BaseCommand, BaseCommandHandler
-from .queries import BaseQuery, BaseQueryHandler
-from .notifications import BaseNotification, BaseNotificationHandler
+from src.building_blocks.application.mediator.messages.commands import BaseCommand, BaseCommandHandler
+from src.building_blocks.application.mediator.messages.queries import BaseQuery, BaseQueryHandler
+from src.building_blocks.application.mediator.messages.notifications import BaseNotification, BaseNotificationHandler
 
 __all__ = [
     "BaseCommand",

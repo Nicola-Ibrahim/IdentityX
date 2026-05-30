@@ -1,8 +1,8 @@
 from typing import override
 from pydantic import BaseModel
 
-from accounts.application.interfaces.jwt import TokenService
-from building_blocks.application.mediator import BaseQuery, BaseQueryHandler
+from src.accounts.application.interfaces.jwt import TokenService
+from src.building_blocks.application.mediator import BaseQuery, BaseQueryHandler
 
 
 class GetJwksQuery(BaseModel, BaseQuery[dict]):

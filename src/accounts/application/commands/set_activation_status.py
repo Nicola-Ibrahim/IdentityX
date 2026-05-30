@@ -3,11 +3,11 @@ import uuid
 
 from pydantic import BaseModel
 
-from building_blocks.application.mediator import BaseCommand, BaseCommandHandler
-from accounts.domain.account.value_objects.account_id import AccountId
-from accounts.domain.interfaces.account_repository import BaseAccountRepository
-from accounts.domain.interfaces.session_repository import BaseSessionRepository
-from accounts.application.dtos.account import AccountDTO
+from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from src.accounts.domain.account.value_objects.account_id import AccountId
+from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
+from src.accounts.domain.interfaces.session_repository import BaseSessionRepository
+from src.accounts.application.dtos.account import AccountDTO
 
 
 class SetActivationStatusCommand(BaseModel, BaseCommand[AccountDTO]):

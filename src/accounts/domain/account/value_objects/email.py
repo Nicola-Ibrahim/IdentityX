@@ -1,8 +1,8 @@
 from typing import Self
 
-from building_blocks.domain.value_object import ValueObject
+from src.building_blocks.domain.value_object import ValueObject
 
-from ..rules.email_must_be_valid_rule import EmailMustBeValidRule
+from src.accounts.domain.account.rules.email_must_be_valid_rule import EmailMustBeValidRule
 
 
 class Email(ValueObject):

@@ -1,8 +1,8 @@
 from typing import Self
 
-from building_blocks.domain.value_object import ValueObject
+from src.building_blocks.domain.value_object import ValueObject
 
-from ..rules.password_must_meet_policy_rule import PasswordMustMeetPolicyRule
+from src.accounts.domain.account.rules.password_must_meet_policy_rule import PasswordMustMeetPolicyRule
 
 
 class Password(ValueObject):

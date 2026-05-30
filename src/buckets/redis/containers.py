@@ -1,6 +1,6 @@
 from dependency_injector import containers, providers
-from .client import RedisClientFactory
-from .config import RedisSettings
+from src.buckets.redis.client import RedisClientFactory
+from src.buckets.redis.config import RedisSettings
 
 
 class RedisContainer(containers.DeclarativeContainer):

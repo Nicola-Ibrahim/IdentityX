@@ -5,17 +5,17 @@ from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
-from startup import IdentityXStartUp
-from .core import middleware
-from .core.config import get_settings
-from .core.exceptions import (
+from src.startup import IdentityXStartUp
+from src.api.core import middleware
+from src.api.core.config import get_settings
+from src.api.core.exceptions import (
     APIError,
     api_exception_handler,
     http_exception_handler,
     system_exception_handler,
     validation_exception_handler,
 )
-from .core.utils.routing_helpers import collect_routers
+from src.api.core.utils.routing_helpers import collect_routers
 
 
 class APIFactory:

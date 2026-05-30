@@ -1,4 +1,4 @@
-from .entity import Entity
+from src.building_blocks.domain.entity import Entity
 
 
 class AggregateRoot[TEntityId](Entity[TEntityId]):

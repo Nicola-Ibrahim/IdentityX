@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from .rule import BaseBusinessRule
+from src.building_blocks.domain.rule import BaseBusinessRule
 
 
 @dataclass(eq=False)

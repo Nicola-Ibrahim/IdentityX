@@ -1,7 +1,7 @@
 """Rule ensuring session expiration time is set in the future."""
 
 from datetime import datetime, timezone
-from building_blocks.domain.rule import BaseBusinessRule
+from src.building_blocks.domain.rule import BaseBusinessRule
 
 
 class SessionExpirationMustBeFutureRule(BaseBusinessRule):

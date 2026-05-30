@@ -1,11 +1,11 @@
 from typing import override
 from pydantic import BaseModel
 
-from accounts.application.interfaces.jwt import TokenService
-from accounts.domain.interfaces.session_repository import BaseSessionRepository
-from accounts.domain.session.token_errors import TokenRevokedException
-from accounts.domain.session.value_objects.session_id import SessionId
-from building_blocks.application.mediator import BaseQuery, BaseQueryHandler
+from src.accounts.application.interfaces.jwt import TokenService
+from src.accounts.domain.interfaces.session_repository import BaseSessionRepository
+from src.accounts.domain.session.token_errors import TokenRevokedException
+from src.accounts.domain.session.value_objects.session_id import SessionId
+from src.building_blocks.application.mediator import BaseQuery, BaseQueryHandler
 
 
 class ValidateTokenQuery(BaseModel, BaseQuery[str]):

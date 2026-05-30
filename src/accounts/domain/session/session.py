@@ -2,12 +2,12 @@ from datetime import datetime, timezone
 
 from pydantic import Field
 
-from building_blocks.domain.aggregate_root import AggregateRoot
-from .rules.session_expiration_must_be_future_rule import SessionExpirationMustBeFutureRule
-from .value_objects.account_id import AccountId
-from .value_objects.refresh_token import RefreshToken
-from .value_objects.session_id import SessionId
-from .value_objects.session_status import SessionStatus
+from src.building_blocks.domain.aggregate_root import AggregateRoot
+from src.accounts.domain.session.rules.session_expiration_must_be_future_rule import SessionExpirationMustBeFutureRule
+from src.accounts.domain.session.value_objects.account_id import AccountId
+from src.accounts.domain.session.value_objects.refresh_token import RefreshToken
+from src.accounts.domain.session.value_objects.session_id import SessionId
+from src.accounts.domain.session.value_objects.session_status import SessionStatus
 
 
 class Session(AggregateRoot[SessionId]):

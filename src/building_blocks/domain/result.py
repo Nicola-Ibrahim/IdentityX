@@ -5,7 +5,7 @@ from typing import Any, Callable
 
 from pydantic import BaseModel
 
-from .exceptions import DomainError, DomainException
+from src.building_blocks.domain.exceptions import DomainError, DomainException
 
 
 class Result[TResult, TError: DomainException](BaseModel):

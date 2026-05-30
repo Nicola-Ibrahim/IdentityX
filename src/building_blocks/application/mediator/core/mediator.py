@@ -5,12 +5,12 @@ import pkgutil
 import sys
 from typing import Any, Callable, TypeVar, get_args, get_origin
 
-from ..messages.commands import BaseCommand, BaseCommandHandler
-from ..messages.notifications import BaseNotification, BaseNotificationHandler
-from ..messages.queries import BaseQuery, BaseQueryHandler
-from .behaviors import BaseBehavior
-from .exceptions import HandlerNotFoundError
-from .provider import ServiceContainer
+from src.building_blocks.application.mediator.messages.commands import BaseCommand, BaseCommandHandler
+from src.building_blocks.application.mediator.messages.notifications import BaseNotification, BaseNotificationHandler
+from src.building_blocks.application.mediator.messages.queries import BaseQuery, BaseQueryHandler
+from src.building_blocks.application.mediator.core.behaviors import BaseBehavior
+from src.building_blocks.application.mediator.core.exceptions import HandlerNotFoundError
+from src.building_blocks.application.mediator.core.provider import ServiceContainer
 
 
 class Mediator:

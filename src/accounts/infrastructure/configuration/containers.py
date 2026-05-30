@@ -1,15 +1,15 @@
 from dependency_injector import containers, providers
 
-from accounts.infrastructure.configuration.settings import AccountsSettings
-from accounts.infrastructure.persistence.repositories.account import SQLBaseAccountRepository
-from accounts.infrastructure.persistence.repositories.session import SQLBaseSessionRepository
-from accounts.infrastructure.persistence.repositories.audit import SQLAuditLogRepository
-from accounts.infrastructure.crypto.password_hasher import Argon2PasswordHasher
-from accounts.infrastructure.crypto.jwt_token import JWTTokenService
-from accounts.infrastructure.messaging.email_notifier import ConsoleNotificationService
-from accounts.infrastructure.authentication.social.google_provider import GoogleAuthenticationProvider
-from accounts.application.providers import SocialProviders
-from accounts.domain.services.audit_service import AuditService
+from src.accounts.infrastructure.configuration.settings import AccountsSettings
+from src.accounts.infrastructure.persistence.repositories.account import SQLBaseAccountRepository
+from src.accounts.infrastructure.persistence.repositories.session import SQLBaseSessionRepository
+from src.accounts.infrastructure.persistence.repositories.audit import SQLAuditLogRepository
+from src.accounts.infrastructure.crypto.password_hasher import Argon2PasswordHasher
+from src.accounts.infrastructure.crypto.jwt_token import JWTTokenService
+from src.accounts.infrastructure.messaging.email_notifier import ConsoleNotificationService
+from src.accounts.infrastructure.authentication.social.google_provider import GoogleAuthenticationProvider
+from src.accounts.application.providers import SocialProviders
+from src.accounts.domain.services.audit_service import AuditService
 
 
 class AccountsContainer(containers.DeclarativeContainer):

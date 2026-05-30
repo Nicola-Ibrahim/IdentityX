@@ -1,9 +1,9 @@
 from typing import override
 from pydantic import BaseModel
 
-from accounts.application.dtos.account import AccountDTO
-from accounts.domain.interfaces.account_repository import BaseAccountRepository
-from building_blocks.application.mediator import BaseQuery, BaseQueryHandler
+from src.accounts.application.dtos.account import AccountDTO
+from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
+from src.building_blocks.application.mediator import BaseQuery, BaseQueryHandler
 
 
 class ListAccountsQuery(BaseModel, BaseQuery[tuple[AccountDTO, ...]]):

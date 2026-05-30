@@ -13,6 +13,6 @@ and profile management. It replaces the previous ``account``,
 module.
 """
 
-from .infrastructure.configuration.startup import AccountsStartUp  # noqa: F401
+from src.accounts.infrastructure.configuration.startup import AccountsStartUp  # noqa: F401
 
 __all__ = ["AccountsStartUp"]

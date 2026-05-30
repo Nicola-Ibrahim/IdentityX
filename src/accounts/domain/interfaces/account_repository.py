@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 
-from ..account.account import Account
-from ..account.value_objects.account_id import AccountId
+from src.accounts.domain.account.account import Account
+from src.accounts.domain.account.value_objects.account_id import AccountId
 
 
 class BaseAccountRepository(ABC):

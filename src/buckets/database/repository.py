@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .session import SQLAlchemySessionFactory
+from src.buckets.database.session import SQLAlchemySessionFactory
 
 
 class SQLBaseRepository[ModelType]:

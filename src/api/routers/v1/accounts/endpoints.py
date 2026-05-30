@@ -6,33 +6,33 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_limiter.depends import RateLimiter
 from pyrate_limiter import Duration, Limiter, Rate
 
-from accounts.application.interfaces.account_module import BaseAccountModule
-from api.core.responses import APIResponse, SuccessResponse
-from api.core.exceptions import raise_http
-from api.core.security.dependencies import get_current_account_id, get_account_module
+from src.accounts.application.interfaces.account_module import BaseAccountModule
+from src.api.core.responses import APIResponse, SuccessResponse
+from src.api.core.exceptions import raise_http
+from src.api.core.security.dependencies import get_current_account_id, get_account_module
 
-from accounts.application.commands.register_account import RegisterAccountCommand
-from accounts.application.commands.verify_account import VerifyAccountCommand
-from accounts.application.commands.authenticate import AuthenticateCommand
-from accounts.application.commands.refresh_session import RefreshSessionCommand
-from accounts.application.commands.logout import LogoutCommand
-from accounts.application.commands.update_account import UpdateAccountCommand
-from accounts.application.commands.setup_mfa import SetupMfaCommand
-from accounts.application.commands.verify_and_enable_mfa import VerifyAndEnableMfaCommand
-from accounts.application.commands.authenticate_mfa import AuthenticateMfaCommand
-from accounts.application.commands.social_authenticate import SocialAuthenticateCommand
+from src.accounts.application.commands.register_account import RegisterAccountCommand
+from src.accounts.application.commands.verify_account import VerifyAccountCommand
+from src.accounts.application.commands.authenticate import AuthenticateCommand
+from src.accounts.application.commands.refresh_session import RefreshSessionCommand
+from src.accounts.application.commands.logout import LogoutCommand
+from src.accounts.application.commands.update_account import UpdateAccountCommand
+from src.accounts.application.commands.setup_mfa import SetupMfaCommand
+from src.accounts.application.commands.verify_and_enable_mfa import VerifyAndEnableMfaCommand
+from src.accounts.application.commands.authenticate_mfa import AuthenticateMfaCommand
+from src.accounts.application.commands.social_authenticate import SocialAuthenticateCommand
 
-from accounts.application.queries.get_account_by_id import GetAccountByIdQuery
-from accounts.application.queries.get_social_auth_url import GetSocialAuthUrlQuery
+from src.accounts.application.queries.get_account_by_id import GetAccountByIdQuery
+from src.accounts.application.queries.get_social_auth_url import GetSocialAuthUrlQuery
 
-from .requests import (
+from src.api.routers.v1.accounts.requests import (
     RegisterAccountRequest,
     UpdateAccountRequest,
     MfaSetupRequest,
     MfaEnableRequest,
     MfaVerifyRequest,
 )
-from .responses import (
+from src.api.routers.v1.accounts.responses import (
     AccountResponse,
     AuthResponse,
     TokenResponse,

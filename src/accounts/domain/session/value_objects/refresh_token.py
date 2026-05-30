@@ -1,8 +1,8 @@
 from typing import Self
 
-from building_blocks.domain.value_object import ValueObject
+from src.building_blocks.domain.value_object import ValueObject
 
-from ..rules.refresh_token_must_be_secure_rule import RefreshTokenMustBeSecureRule
+from src.accounts.domain.session.rules.refresh_token_must_be_secure_rule import RefreshTokenMustBeSecureRule
 
 
 class RefreshToken(ValueObject):

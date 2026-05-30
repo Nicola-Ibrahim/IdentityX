@@ -1,7 +1,7 @@
 from dependency_injector import containers, providers
 
-from .config import SQLAlchemySettings
-from .session import SQLAlchemySessionFactory
+from src.buckets.database.config import SQLAlchemySettings
+from src.buckets.database.session import SQLAlchemySessionFactory
 
 
 class DatabaseContainer(containers.DeclarativeContainer):

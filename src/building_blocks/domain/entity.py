@@ -4,9 +4,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from .events import DomainEvent
-from .exceptions import BusinessRuleValidationException
-from .rule import BaseBusinessRule
+from src.building_blocks.domain.events import DomainEvent
+from src.building_blocks.domain.exceptions import BusinessRuleValidationException
+from src.building_blocks.domain.rule import BaseBusinessRule
 
 
 class Entity[TEntityId](BaseModel):
