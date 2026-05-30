@@ -1,10 +1,8 @@
 import importlib
 import pkgutil
+from collections.abc import Generator
 from inspect import getmembers
-from typing import Any, Generator, Type, TypeVar
-
-# Define a generic type variable for the member
-T = TypeVar("T")
+from typing import Any
 
 
 def import_modules_from_package(package_name: str, recursive: bool = False) -> Generator[Any, None, None]:
@@ -30,8 +28,8 @@ def import_modules_from_package(package_name: str, recursive: bool = False) -> G
             yield from import_modules_from_package(full_module_name, recursive=True)
 
 
-def extract_members_from_module(
-    module: Any, member_type: Type[T] | None = None, member_name: str | None = None
+def extract_members_from_module[T](
+    module: Any, member_type: type[T] | None = None, member_name: str | None = None
 ) -> Generator[T, None, None]:
     """
     Retrieves members from a given module based on type or name.
@@ -43,8 +41,8 @@ def extract_members_from_module(
             yield member
 
 
-def extract_members_from_package(
-    package_name: str, member_type: Type[T] | None = None, member_name: str | None = None, recursive: bool = False
+def extract_members_from_package[T](
+    package_name: str, member_type: type[T] | None = None, member_name: str | None = None, recursive: bool = False
 ) -> Generator[T, None, None]:
     """
     Imports all modules from a package and retrieves specified members from them.

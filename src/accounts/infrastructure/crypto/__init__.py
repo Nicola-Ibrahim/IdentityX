@@ -1,5 +1,5 @@
 """Cryptographic helpers for the accounts module."""
 
-from .password_hasher import PBKDF2PasswordHasher
+from .password_hasher import Argon2PasswordHasher
 
-__all__ = ["PBKDF2PasswordHasher"]
+__all__ = ["Argon2PasswordHasher"]

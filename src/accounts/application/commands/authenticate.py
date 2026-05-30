@@ -1,3 +1,4 @@
+from typing import override
 from datetime import datetime, timedelta, timezone
 
 from pydantic import BaseModel
@@ -70,6 +71,7 @@ class AuthenticateHandler(BaseCommandHandler[AuthenticateCommand, AuthDTO]):
             expires_in=12 * 3600,
         )
 
+    @override
     async def handle(self, command: AuthenticateCommand) -> AuthDTO:
         account = await self._account_repo.get_by_email(str(Email.create(command.email)))
 

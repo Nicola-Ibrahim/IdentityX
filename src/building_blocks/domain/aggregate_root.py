@@ -1,7 +1,7 @@
-from .entity import Entity, TEntityId
+from .entity import Entity
 
 
-class AggregateRoot(Entity[TEntityId]):
+class AggregateRoot[TEntityId](Entity[TEntityId]):
     """Aggregate root marker that extends :class:`Entity`."""
 
     def mark_committed(self) -> None:

@@ -1,5 +1,5 @@
 import logging.config
-from typing import Any, List
+from typing import Any
 
 from pydantic import AnyHttpUrl, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -45,12 +45,12 @@ class Settings(BaseSettings):
         examples=["your-ultra-secret-key"],
     )
     CORS_ENABLED: bool = Field(True, description="Enable CORS middleware", examples=[True])
-    CORS_ORIGINS: List[AnyHttpUrl | str] = Field(
+    CORS_ORIGINS: list[AnyHttpUrl | str] = Field(
         ["*"], description="Allowed CORS origins", examples=[["*"], ["https://example.com"]]
     )
     CORS_ALLOW_CREDENTIALS: bool = Field(True, description="Allow credentials in CORS requests", examples=[True])
-    CORS_ALLOW_METHODS: List[str] = Field(["*"], description="Allowed CORS methods", examples=[["*"], ["GET", "POST"]])
-    CORS_ALLOW_HEADERS: List[str] = Field(
+    CORS_ALLOW_METHODS: list[str] = Field(["*"], description="Allowed CORS methods", examples=[["*"], ["GET", "POST"]])
+    CORS_ALLOW_HEADERS: list[str] = Field(
         ["*"], description="Allowed CORS headers", examples=[["*"], ["Content-Type", "Authorization"]]
     )
 

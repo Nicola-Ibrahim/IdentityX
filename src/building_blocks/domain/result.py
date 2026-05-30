@@ -1,15 +1,14 @@
+from __future__ import annotations
+
 from functools import wraps
-from typing import Any, Callable, Generic, TypeVar
+from typing import Any, Callable
 
 from pydantic import BaseModel
 
 from .exceptions import DomainError, DomainException
 
-TResult = TypeVar("TResult")  # Type of the success value
-TError = TypeVar("TError", bound=DomainException)  # Type of the error (must be an exception)
 
-
-class Result(BaseModel, Generic[TResult, TError]):
+class Result[TResult, TError: DomainException](BaseModel):
     """
     Class for encapsulating the outcome of an operation,
     which can either succeed (SuccessResult) or fail (ErrorResult).
@@ -65,7 +64,7 @@ class Result(BaseModel, Generic[TResult, TError]):
         return on_failure(self.error)
 
     @classmethod
-    def ok(cls, value: TResult) -> "Result[TResult, TError]":
+    def ok(cls, value: TResult) -> Result[TResult, TError]:
         """
         Factory method for creating a success result.
 
@@ -80,7 +79,7 @@ class Result(BaseModel, Generic[TResult, TError]):
         return instance
 
     @classmethod
-    def fail(cls, error: TError) -> "Result[TResult, TError]":
+    def fail(cls, error: TError) -> Result[TResult, TError]:
         """
         Factory method for creating an error result.
 
@@ -99,7 +98,7 @@ class Result(BaseModel, Generic[TResult, TError]):
         """Wraps a service method to return a Result object."""
 
         @wraps(func)
-        async def wrapper(*args, **kwargs) -> "Result":
+        async def wrapper(*args, **kwargs) -> Result:
             try:
                 # Execute the pure service logic
                 value = await func(*args, **kwargs)

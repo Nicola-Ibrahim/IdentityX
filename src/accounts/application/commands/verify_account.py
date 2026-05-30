@@ -1,3 +1,4 @@
+from typing import override
 import uuid
 
 from pydantic import BaseModel
@@ -16,6 +17,7 @@ class VerifyAccountHandler(BaseCommandHandler[VerifyAccountCommand, AccountDTO])
     def __init__(self, account_repo: BaseAccountRepository):
         self._account_repo = account_repo
 
+    @override
     async def handle(self, command: VerifyAccountCommand) -> AccountDTO:
         try:
             account_id_vo = AccountId.create(uuid.UUID(command.account_id))

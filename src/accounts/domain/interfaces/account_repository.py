@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Iterable, Optional
+from collections.abc import Iterable
 
 from ..account.account import Account
 from ..account.value_objects.account_id import AccountId
@@ -15,15 +15,15 @@ class BaseAccountRepository(ABC):
         """Persist modifications to an existing account."""
 
     @abstractmethod
-    async def get_by_id(self, account_id: AccountId) -> Optional[Account]:
+    async def get_by_id(self, account_id: AccountId) -> Account | None:
         """Retrieve an account by its identifier."""
 
     @abstractmethod
-    async def get_by_email(self, email: str) -> Optional[Account]:
+    async def get_by_email(self, email: str) -> Account | None:
         """Retrieve an account by email."""
 
     @abstractmethod
-    async def get_by_external_identity(self, provider: str, provider_user_id: str) -> Optional[Account]:
+    async def get_by_external_identity(self, provider: str, provider_user_id: str) -> Account | None:
         """Retrieve an account by an external provider identity (e.g. Google ID)."""
 
     @abstractmethod

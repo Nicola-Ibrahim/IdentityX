@@ -1,3 +1,4 @@
+from typing import override
 import uuid
 
 from pydantic import BaseModel
@@ -19,6 +20,7 @@ class SetActivationStatusHandler(BaseCommandHandler[SetActivationStatusCommand, 
         self._account_repo = account_repo
         self._session_repo = session_repo
 
+    @override
     async def handle(self, command: SetActivationStatusCommand) -> AccountDTO:
         try:
             account_id_vo = AccountId.create(uuid.UUID(command.account_id))

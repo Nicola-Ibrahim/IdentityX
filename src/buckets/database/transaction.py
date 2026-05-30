@@ -28,12 +28,16 @@ class TransactionScope:
 
 
 class TransactionBehavior:
-    """Mediator behavior for managing transactions."""
+    """
+    A mediator pipeline behavior that wraps commands in a database transaction.
+    Uses TransactionScope to manage the session scope and contextvars.
+    """
 
-    def __init__(self, session_factory: SQLAlchemySessionFactory):
+    def __init__(self, session_factory: SQLAlchemySessionFactory) -> None:
         self._session_factory = session_factory
 
     async def handle(self, request: Any, next_behavior: Callable[[], Any]) -> Any:
+        # Only wrap commands in a transaction, not queries
         if not isinstance(request, BaseCommand):
             return await next_behavior()
 

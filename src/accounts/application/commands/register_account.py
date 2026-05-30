@@ -1,3 +1,4 @@
+from typing import override
 from pydantic import BaseModel
 
 from accounts.application.dtos.account import AccountDTO
@@ -27,6 +28,7 @@ class RegisterAccountHandler(BaseCommandHandler[RegisterAccountCommand, AccountD
         self._notification_service = notification_service
         self._password_hasher = password_hasher
 
+    @override
     async def handle(self, command: RegisterAccountCommand) -> AccountDTO:
         email_vo = Email.create(command.email)
         password_vo = Password.create(command.password)

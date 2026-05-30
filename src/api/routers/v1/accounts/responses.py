@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from typing import List, Optional
 
 
 class AccountResponse(BaseModel):
@@ -9,7 +8,7 @@ class AccountResponse(BaseModel):
     email: str
     is_verified: bool
     is_active: bool
-    roles: List[str]
+    roles: list[str]
 
 
 class TokenResponse(BaseModel):
@@ -19,7 +18,7 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
     expires_in: int
-    trusted_device_token: Optional[str] = None
+    trusted_device_token: str | None = None
 
 
 class MfaChallengeResponse(BaseModel):
@@ -33,8 +32,8 @@ class AuthResponse(BaseModel):
     """Combined authentication result."""
 
     requires_mfa: bool = False
-    tokens: Optional[TokenResponse] = None
-    mfa: Optional[MfaChallengeResponse] = None
+    tokens: TokenResponse | None = None
+    mfa: MfaChallengeResponse | None = None
 
 
 class MfaSetupResponse(BaseModel):
@@ -42,7 +41,7 @@ class MfaSetupResponse(BaseModel):
 
     secret: str
     provisioning_uri: str
-    recovery_codes: List[str]
+    recovery_codes: list[str]
 
 
 class SocialAuthUrlResponse(BaseModel):

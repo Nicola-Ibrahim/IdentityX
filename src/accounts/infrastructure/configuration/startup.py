@@ -1,18 +1,19 @@
-from typing import Any, Self, get_type_hints
-from building_blocks.application.mediator import Mediator
-from building_blocks.infrastructure.transaction import TransactionBehavior
-from accounts.infrastructure.module import AccountModule
-from accounts.infrastructure.configuration.containers import AccountsContainer
+from typing import Any, Self
+
+from accounts.application.interfaces.jwt import TokenService
+from accounts.application.interfaces.notification_service import BaseNotificationService
+from accounts.application.interfaces.password_hasher import BasePasswordHasher
+from accounts.application.providers import SocialProviders
 
 # Interfaces for registration
 from accounts.domain.interfaces.account_repository import BaseAccountRepository
-from accounts.domain.interfaces.session_repository import BaseSessionRepository
 from accounts.domain.interfaces.audit_repository import BaseAuditRepository
-from accounts.application.interfaces.password_hasher import BasePasswordHasher
-from accounts.application.interfaces.jwt import TokenService
-from accounts.application.interfaces.notification_service import BaseNotificationService
+from accounts.domain.interfaces.session_repository import BaseSessionRepository
 from accounts.domain.services.audit_service import AuditService
-from accounts.application.providers import SocialProviders
+from accounts.infrastructure.configuration.containers import AccountsContainer
+from accounts.infrastructure.module import AccountModule
+from buckets.database.transaction import TransactionBehavior
+from building_blocks.application.mediator import Mediator, ServiceContainer
 
 
 class AccountsStartUp:
@@ -29,44 +30,26 @@ class AccountsStartUp:
         try:
             # 1. Initialize the Infrastructure Container
             self._container = AccountsContainer()
+
+            # 2. Create the ServiceContainer and register dependencies
+            container = ServiceContainer()
+            container.register(BaseAccountRepository, self._container.account_repository)
+            container.register(BaseSessionRepository, self._container.session_repository)
+            container.register(BaseAuditRepository, self._container.audit_repository)
+            container.register(BasePasswordHasher, self._container.password_hasher)
+            container.register(TokenService, self._container.token_service)
+            container.register(BaseNotificationService, self._container.notification_service)
+            container.register(AuditService, self._container.audit_service)
+            container.register(SocialProviders, self._container.social_providers)
+
+            # Resolve the database session factory from the passed DB container/factory
             session_factory = database()
 
-            # 2. Define the Service Registry (Mapping Interfaces -> Infrastructure Providers)
-            # This is the "C# Registration" equivalent
-            service_map = {
-                BaseAccountRepository: self._container.account_repository,
-                BaseSessionRepository: self._container.session_repository,
-                BaseAuditRepository: self._container.audit_repository,
-                BasePasswordHasher: self._container.password_hasher,
-                TokenService: self._container.token_service,
-                BaseNotificationService: self._container.notification_service,
-                AuditService: self._container.audit_service,
-                SocialProviders: self._container.social_providers,
-            }
+            # Set up transaction behavior wrapping commands
+            behaviors = [TransactionBehavior(session_factory=session_factory)]
 
-            # 3. Create the Service Provider (Resolver) for the Mediator
-            def service_provider(cls: type) -> Any:
-                # If the requested type is a registered service, resolve it from the container
-                if cls in service_map:
-                    return service_map[cls]()
-
-                # If it's a Handler class (or any other class), resolve its dependencies from the container
-                if hasattr(cls, "__init__"):
-                    hints = get_type_hints(cls.__init__)
-                    kwargs = {}
-                    for name, hint in hints.items():
-                        if name == "return":
-                            continue
-                        kwargs[name] = service_provider(hint)
-                    return cls(**kwargs)
-
-                raise LookupError(f"Cannot resolve dependency of type: {cls.__name__}")
-
-            # 4. Configure the Mediator
-            # Scan for all handlers in the project
-            Mediator.scan("accounts")
-
-            mediator = Mediator(service_provider=service_provider, behaviors=[TransactionBehavior(session_factory)])
+            # 4. Configure the localized Mediator
+            mediator = Mediator(container=container, behaviors=behaviors)
 
             # 5. Initialize the Facade (AccountModule)
             self._module = AccountModule(mediator)

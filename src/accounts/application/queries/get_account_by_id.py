@@ -1,3 +1,4 @@
+from typing import override
 import uuid
 
 from pydantic import BaseModel
@@ -16,6 +17,7 @@ class GetAccountByIdHandler(BaseQueryHandler[GetAccountByIdQuery, AccountDTO | N
     def __init__(self, account_repo: BaseAccountRepository):
         self._account_repo = account_repo
 
+    @override
     async def handle(self, query: GetAccountByIdQuery) -> AccountDTO | None:
         try:
             account_id_vo = AccountId.create(uuid.UUID(query.account_id))

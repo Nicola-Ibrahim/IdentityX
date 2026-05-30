@@ -1,16 +1,12 @@
-from typing import Generic, Type, TypeVar
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .session import SQLAlchemySessionFactory
 
-ModelType = TypeVar("ModelType")
 
-
-class SQLBaseRepository(Generic[ModelType]):
+class SQLBaseRepository[ModelType]:
     """Provides standard CRUD and automatic background session resolution."""
 
-    def __init__(self, model: Type[ModelType]):
+    def __init__(self, model: type[ModelType]):
         self.model = model
 
     @property

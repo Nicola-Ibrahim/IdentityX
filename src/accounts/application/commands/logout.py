@@ -1,3 +1,4 @@
+from typing import override
 from pydantic import BaseModel
 
 from building_blocks.application.mediator import BaseCommand, BaseCommandHandler
@@ -15,6 +16,7 @@ class LogoutHandler(BaseCommandHandler[LogoutCommand, None]):
         self._token_service = token_service
         self._session_repo = session_repo
 
+    @override
     async def handle(self, command: LogoutCommand) -> None:
         try:
             self._token_service.validate_refresh_token(command.refresh_token)

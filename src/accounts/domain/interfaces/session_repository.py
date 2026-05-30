@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Iterable, Optional
+from collections.abc import Iterable
 
 from ..account.value_objects.account_id import AccountId
 from ..session.session import Session
@@ -17,11 +17,11 @@ class BaseSessionRepository(ABC):
         """Persist changes to an existing session."""
 
     @abstractmethod
-    async def get_by_id(self, session_id: SessionId) -> Optional[Session]:
+    async def get_by_id(self, session_id: SessionId) -> Session | None:
         """Return a session by its identifier."""
 
     @abstractmethod
-    async def get_by_refresh_token(self, token: RefreshToken) -> Optional[Session]:
+    async def get_by_refresh_token(self, token: RefreshToken) -> Session | None:
         """Return a session by its refresh token value."""
 
     @abstractmethod

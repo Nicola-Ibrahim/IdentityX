@@ -1,3 +1,4 @@
+from typing import override
 import uuid
 
 from pydantic import BaseModel
@@ -15,6 +16,7 @@ class RemoveAccountHandler(BaseCommandHandler[RemoveAccountCommand, None]):
     def __init__(self, account_repo: BaseAccountRepository):
         self._account_repo = account_repo
 
+    @override
     async def handle(self, command: RemoveAccountCommand) -> None:
         try:
             account_id_vo = AccountId.create(uuid.UUID(command.account_id))

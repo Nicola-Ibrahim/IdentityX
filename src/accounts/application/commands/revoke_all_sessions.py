@@ -1,3 +1,4 @@
+from typing import override
 import uuid
 from pydantic import BaseModel
 from building_blocks.application.mediator import BaseCommand, BaseCommandHandler
@@ -13,6 +14,7 @@ class RevokeAllSessionsHandler(BaseCommandHandler[RevokeAllSessionsCommand, None
     def __init__(self, session_repo: BaseSessionRepository):
         self._session_repo = session_repo
 
+    @override
     async def handle(self, command: RevokeAllSessionsCommand) -> None:
         try:
             account_id_vo = AccountId.create(uuid.UUID(command.account_id))

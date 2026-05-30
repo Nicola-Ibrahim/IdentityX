@@ -1,3 +1,4 @@
+from typing import override
 import uuid
 
 from pydantic import BaseModel
@@ -34,6 +35,7 @@ class RefreshSessionHandler(BaseCommandHandler[RefreshSessionCommand, TokenPair]
         self._audit_repo = audit_repo
         self._audit = audit_service
 
+    @override
     async def handle(self, command: RefreshSessionCommand) -> TokenPair:
         claims = self._token_service.validate_refresh_token(command.refresh_token)
         session = await self._session_repo.get_by_refresh_token(RefreshToken.create(command.refresh_token))

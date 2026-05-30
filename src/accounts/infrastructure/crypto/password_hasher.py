@@ -1,38 +1,23 @@
-import base64
-import hashlib
-import hmac
-import os
+from passlib.context import CryptContext
 
 from accounts.application.interfaces import BasePasswordHasher
 
 
-class PBKDF2PasswordHasher(BasePasswordHasher):  # type: ignore[misc]
-    """Simple PBKDF2 based password hasher.
+class Argon2PasswordHasher(BasePasswordHasher):  # type: ignore[misc]
+    """State-of-the-art password hasher using Argon2id.
 
-    The encoded format matches ``algorithm$iterations$salt$hash`` so it can
-    be stored as text in the database.
+    This uses passlib to handle the complex memory-hard and time-hard
+    parameters of the Argon2 algorithm.
     """
 
-    def __init__(self, iterations: int = 390000, salt_length: int = 16) -> None:
-        self._iterations = iterations
-        self._salt_length = salt_length
+    def __init__(self) -> None:
+        # Argon2 is the default and only allowed algorithm for this hasher
+        self._ctx = CryptContext(schemes=["argon2"], deprecated="auto")
 
     def encode(self, password: str) -> str:
-        salt = os.urandom(self._salt_length)
-        digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, self._iterations)
-        encoded_salt = base64.urlsafe_b64encode(salt).decode("ascii")
-        encoded_hash = base64.urlsafe_b64encode(digest).decode("ascii")
-        return f"pbkdf2_sha256${self._iterations}${encoded_salt}${encoded_hash}"
+        """Hash a password using Argon2id."""
+        return self._ctx.hash(password)
 
     def verify(self, plain_password: str, hashed_password: str) -> bool:
-        try:
-            algorithm, iterations_str, encoded_salt, encoded_hash = hashed_password.split("$")
-            if algorithm != "pbkdf2_sha256":
-                return False
-            iterations = int(iterations_str)
-            salt = base64.urlsafe_b64decode(encoded_salt.encode("ascii"))
-            expected_hash = base64.urlsafe_b64decode(encoded_hash.encode("ascii"))
-        except (ValueError, TypeError):
-            return False
-        digest = hashlib.pbkdf2_hmac("sha256", plain_password.encode("utf-8"), salt, iterations)
-        return hmac.compare_digest(digest, expected_hash)
+        """Verify a password against an Argon2 hash."""
+        return self._ctx.verify(plain_password, hashed_password)

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -38,13 +38,13 @@ class AccountTable(BaseSQLTable):
     # Audit fields are inherited from BaseSQLTable (id, created_at, updated_at)
 
     # Relationships
-    sessions: Mapped[List["SessionTable"]] = relationship(
+    sessions: Mapped[list["SessionTable"]] = relationship(
         "SessionTable", back_populates="account", cascade="all, delete-orphan"
     )
-    external_identities: Mapped[List["ExternalIdentityTable"]] = relationship(
+    external_identities: Mapped[list["ExternalIdentityTable"]] = relationship(
         "ExternalIdentityTable", back_populates="account", cascade="all, delete-orphan"
     )
-    trusted_devices: Mapped[List["TrustedDeviceTable"]] = relationship(
+    trusted_devices: Mapped[list["TrustedDeviceTable"]] = relationship(
         "TrustedDeviceTable", back_populates="account", cascade="all, delete-orphan", lazy="selectin"
     )
 

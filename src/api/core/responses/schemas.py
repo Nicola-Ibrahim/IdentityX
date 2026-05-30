@@ -1,8 +1,5 @@
 from datetime import datetime
-from typing import Generic, List, Optional, TypeVar
 from pydantic import BaseModel, Field
-
-T = TypeVar("T")
 
 
 class BaseResponse(BaseModel):
@@ -12,14 +9,14 @@ class BaseResponse(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
 
-class SuccessResponse(BaseResponse, Generic[T]):
+class SuccessResponse[T](BaseResponse):
     """Standardized schema for successful API responses."""
 
     success: bool = True
     data: T
-    meta: Optional[dict] = None
-    links: Optional[dict] = None
-    message: Optional[str] = None
+    meta: dict | None = None
+    links: dict | None = None
+    message: str | None = None
 
 
 class ErrorDetail(BaseModel):
@@ -27,12 +24,12 @@ class ErrorDetail(BaseModel):
 
     code: str
     message: str
-    target: Optional[str] = None
+    target: str | None = None
 
 
 class FailureResponse(BaseResponse):
     """Standardized schema for error API responses."""
 
     success: bool = False
-    errors: List[ErrorDetail]
-    message: Optional[str] = None
+    errors: list[ErrorDetail]
+    message: str | None = None

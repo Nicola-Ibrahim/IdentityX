@@ -1,3 +1,4 @@
+from typing import override
 from pydantic import BaseModel
 
 from building_blocks.application.mediator import BaseCommand, BaseCommandHandler
@@ -39,6 +40,7 @@ class SocialAuthenticateHandler(BaseCommandHandler[SocialAuthenticateCommand, Au
         self._audit = audit_service
         self._token_service = token_service
 
+    @override
     async def handle(self, command: SocialAuthenticateCommand) -> AuthDTO:
         provider = self._providers.get(command.provider_name)
         if not provider:

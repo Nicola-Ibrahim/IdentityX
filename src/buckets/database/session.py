@@ -57,5 +57,5 @@ class SQLAlchemySessionFactory:
         except LookupError:
             raise RuntimeError(
                 "No active database session found in context. "
-                "Ensure this code runs inside a TransactionScope (e.g. via Mediator TransactionBehavior)."
+                "Ensure this code runs inside a TransactionScope (e.g. via TransactionBehavior in Mediator pipeline)."
             )

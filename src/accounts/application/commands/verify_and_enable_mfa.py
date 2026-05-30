@@ -1,3 +1,4 @@
+from typing import override
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -71,6 +72,7 @@ class VerifyAndEnableMfaHandler(BaseCommandHandler[VerifyAndEnableMfaCommand, Ac
             expires_in=12 * 3600,
         )
 
+    @override
     async def handle(self, command: VerifyAndEnableMfaCommand) -> AccountDTO:
         claims = self._token_service.validate_mfa_token(command.mfa_token)
         account = await self._account_repo.get_by_id(AccountId.create(uuid.UUID(claims.sub)))

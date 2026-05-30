@@ -1,5 +1,6 @@
+from __future__ import annotations
 from datetime import datetime, timezone
-from typing import Any, Generic, TypeVar
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -7,10 +8,8 @@ from .events import DomainEvent
 from .exceptions import BusinessRuleValidationException
 from .rule import BaseBusinessRule
 
-TEntityId = TypeVar("TEntityId")
 
-
-class Entity(BaseModel, Generic[TEntityId]):
+class Entity[TEntityId](BaseModel):
     """Base class for all domain entities."""
 
     id: TEntityId
@@ -34,7 +33,7 @@ class Entity(BaseModel, Generic[TEntityId]):
         self.updated_at = datetime.now(timezone.utc)
         self.version += 1
 
-    def copy(self, **changes: Any) -> "Entity[TEntityId]":
+    def copy(self, **changes: Any) -> Entity[TEntityId]:
         """Create a modified copy of the entity."""
         return self.model_copy(**changes)
 

@@ -1,5 +1,5 @@
 import uuid
-from typing import Any
+from typing import Any, override
 
 from pydantic import BaseModel
 
@@ -19,6 +19,7 @@ class UpdateAccountHandler(BaseCommandHandler[UpdateAccountCommand, AccountDTO])
     def __init__(self, account_repo: BaseAccountRepository):
         self._account_repo = account_repo
 
+    @override
     async def handle(self, command: UpdateAccountCommand) -> AccountDTO:
         try:
             account_id_vo = AccountId.create(uuid.UUID(command.account_id))

@@ -1,3 +1,4 @@
+from typing import override
 import uuid
 
 import pyotp
@@ -19,6 +20,7 @@ class SetupMfaHandler(BaseCommandHandler[SetupMfaCommand, MfaSetup]):
         self._token_service = token_service
         self._account_repo = account_repo
 
+    @override
     async def handle(self, command: SetupMfaCommand) -> MfaSetup:
         claims = self._token_service.validate_mfa_token(command.mfa_token)
         account = await self._account_repo.get_by_id(AccountId.create(uuid.UUID(claims.sub)))

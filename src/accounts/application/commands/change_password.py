@@ -1,3 +1,4 @@
+from typing import override
 import uuid
 
 from pydantic import BaseModel
@@ -27,6 +28,7 @@ class ChangePasswordHandler(BaseCommandHandler[ChangePasswordCommand, AccountDTO
         self._session_repo = session_repo
         self._password_hasher = password_hasher
 
+    @override
     async def handle(self, command: ChangePasswordCommand) -> AccountDTO:
         try:
             account_id_vo = AccountId.create(uuid.UUID(command.account_id))
