@@ -15,8 +15,9 @@ from src.accounts.domain.session.session import Session
 from src.accounts.domain.session.value_objects.refresh_token import RefreshToken
 from src.accounts.domain.session.value_objects.session_id import SessionId
 from src.accounts.application.dtos.auth import AuthDTO, MfaChallenge, TokenPair
-from src.accounts.application.interfaces.jwt import TokenPayload, TokenService
-from src.accounts.application.interfaces.password_hasher import BasePasswordHasher
+from src.accounts.domain.services.token_service import TokenPayload, TokenService
+from src.accounts.domain.services.password_hasher import PasswordHasher
+from src.accounts.domain.account.value_objects.password import Password
 
 
 class AuthenticateCommand(BaseModel, BaseCommand[AuthDTO]):
@@ -33,7 +34,7 @@ class AuthenticateHandler(BaseCommandHandler[AuthenticateCommand, AuthDTO]):
         account_repo: BaseAccountRepository,
         session_repo: BaseSessionRepository,
         audit_repo: BaseAuditRepository,
-        password_hasher: BasePasswordHasher,
+        password_hasher: PasswordHasher,
         token_service: TokenService,
         audit_service: AuditService,
     ):
@@ -56,24 +57,25 @@ class AuthenticateHandler(BaseCommandHandler[AuthenticateCommand, AuthDTO]):
 
         session = Session.issue(
             account_id=account.id,
-            refresh_token=RefreshToken.create(refresh),
+            refresh_token=refresh,
             expires_at=expires_at,
             session_id=session_id,
         )
 
         await self._session_repo.add(session)
-        audit_entry = self._audit.create_entry(action, ip_address, user_agent, account_id=str(account.id.value))
+        audit_entry = self._audit.create_entry(action, ip_address, user_agent, account_id=account.id)
         await self._audit_repo.add(audit_entry)
 
         return TokenPair(
-            access_token=access,
-            refresh_token=refresh,
+            access_token=access.value,
+            refresh_token=refresh.value,
             expires_in=12 * 3600,
         )
 
     @override
     async def handle(self, command: AuthenticateCommand) -> AuthDTO:
-        account = await self._account_repo.get_by_email(str(Email.create(command.email)))
+        email_vo = Email.create(command.email)
+        account = await self._account_repo.get_by_email(str(email_vo))
 
         if not account:
             audit_entry = self._audit.create_entry(
@@ -85,12 +87,12 @@ class AuthenticateHandler(BaseCommandHandler[AuthenticateCommand, AuthDTO]):
             await self._audit_repo.add(audit_entry)
             raise ValueError("Invalid credentials")
 
-        if not self._hasher.verify(command.password, account.password.value):
+        if not self._hasher.verify(Password.create(command.password), account.password):
             audit_entry = self._audit.create_entry(
                 AuditAction.LOGIN_FAILED,
                 command.ip_address,
                 command.user_agent,
-                account_id=str(account.id.value),
+                account_id=account.id,
                 details={"reason": "invalid_password"},
             )
             await self._audit_repo.add(audit_entry)
@@ -101,7 +103,7 @@ class AuthenticateHandler(BaseCommandHandler[AuthenticateCommand, AuthDTO]):
                 AuditAction.LOGIN_FAILED,
                 command.ip_address,
                 command.user_agent,
-                account_id=str(account.id.value),
+                account_id=account.id,
                 details={"reason": "account_inactive_or_unverified"},
             )
             await self._audit_repo.add(audit_entry)
@@ -112,7 +114,7 @@ class AuthenticateHandler(BaseCommandHandler[AuthenticateCommand, AuthDTO]):
                 AuditAction.LOGIN_SUCCESS,
                 command.ip_address,
                 command.user_agent,
-                account_id=str(account.id.value),
+                account_id=account.id,
                 details={"trusted_device": True},
             )
             await self._audit_repo.add(audit_entry)
@@ -123,11 +125,11 @@ class AuthenticateHandler(BaseCommandHandler[AuthenticateCommand, AuthDTO]):
 
         log_action = AuditAction.MFA_REQUIRED if account.mfa.enabled else AuditAction.MFA_SETUP_INITIATED
         audit_entry = self._audit.create_entry(
-            log_action, command.ip_address, command.user_agent, account_id=str(account.id.value)
+            log_action, command.ip_address, command.user_agent, account_id=account.id
         )
         await self._audit_repo.add(audit_entry)
 
         return AuthDTO(
             requires_mfa=True,
-            mfa=MfaChallenge(mfa_token=mfa_token, mfa_setup_required=not account.mfa.enabled),
+            mfa=MfaChallenge(mfa_token=mfa_token.value, mfa_setup_required=not account.mfa.enabled),
         )

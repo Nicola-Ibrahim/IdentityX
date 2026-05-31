@@ -5,7 +5,7 @@ from src.accounts.domain.session.session import Session
 from src.accounts.domain.session.value_objects.refresh_token import RefreshToken
 from src.accounts.domain.session.value_objects.session_id import SessionId
 from src.accounts.application.dtos.auth import TokenPair
-from src.accounts.application.interfaces.jwt import TokenPayload
+from src.accounts.domain.services.token_service import TokenPayload
 
 
 async def issue_session(
@@ -28,17 +28,17 @@ async def issue_session(
 
     session = Session.issue(
         account_id=account.id,
-        refresh_token=RefreshToken.create(refresh),
+        refresh_token=refresh,
         expires_at=expires_at,
         session_id=session_id,
     )
 
     await session_repo.add(session)
-    audit_entry = audit_service.create_entry(action, ip_address, user_agent, account_id=str(account.id.value))
+    audit_entry = audit_service.create_entry(action, ip_address, user_agent, account_id=account.id)
     await audit_repo.add(audit_entry)
 
     return TokenPair(
-        access_token=access,
-        refresh_token=refresh,
+        access_token=access.value,
+        refresh_token=refresh.value,
         expires_in=int(session_ttl.total_seconds()),
     )

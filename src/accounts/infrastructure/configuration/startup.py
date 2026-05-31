@@ -1,8 +1,8 @@
 from typing import Any, Self
 
-from src.accounts.application.interfaces.jwt import TokenService
+from src.accounts.domain.services.token_service import TokenService
 from src.accounts.application.interfaces.notification_service import BaseNotificationService
-from src.accounts.application.interfaces.password_hasher import BasePasswordHasher
+from src.accounts.domain.services.password_hasher import PasswordHasher
 from src.accounts.application.providers import SocialProviders
 
 # Interfaces for registration
@@ -33,10 +33,8 @@ class AccountsStartUp:
 
             # 2. Create the ServiceContainer and register dependencies
             container = ServiceContainer()
-            container.register(BaseAccountRepository, self._container.account_repository)
-            container.register(BaseSessionRepository, self._container.session_repository)
             container.register(BaseAuditRepository, self._container.audit_repository)
-            container.register(BasePasswordHasher, self._container.password_hasher)
+            container.register(PasswordHasher, self._container.password_hasher)
             container.register(TokenService, self._container.token_service)
             container.register(BaseNotificationService, self._container.notification_service)
             container.register(AuditService, self._container.audit_service)
@@ -50,6 +48,11 @@ class AccountsStartUp:
 
             # 4. Configure the localized Mediator
             mediator = Mediator(container=container, behaviors=behaviors)
+
+            # Wire up repositories and Mediator
+            container.register(BaseAccountRepository, lambda: self._container.account_repository(mediator=mediator))
+            container.register(BaseSessionRepository, lambda: self._container.session_repository(mediator=mediator))
+            container.register(Mediator, lambda: mediator)
 
             # 5. Initialize the Facade (AccountModule)
             self._module = AccountModule(mediator)

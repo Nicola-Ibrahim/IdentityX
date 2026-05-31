@@ -6,5 +6,4 @@ hashing.
 """
 
 from src.accounts.application.interfaces.notification_service import BaseNotificationService  # noqa: F401
-from src.accounts.application.interfaces.password_hasher import BasePasswordHasher  # noqa: F401
 from src.accounts.application.interfaces.social_provider import BaseSocialAuthenticationProvider  # noqa: F401

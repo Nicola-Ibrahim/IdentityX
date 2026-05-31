@@ -4,8 +4,8 @@ from src.accounts.infrastructure.configuration.settings import AccountsSettings
 from src.accounts.infrastructure.persistence.repositories.account import SQLBaseAccountRepository
 from src.accounts.infrastructure.persistence.repositories.session import SQLBaseSessionRepository
 from src.accounts.infrastructure.persistence.repositories.audit import SQLAuditLogRepository
-from src.accounts.infrastructure.crypto.password_hasher import Argon2PasswordHasher
-from src.accounts.infrastructure.crypto.jwt_token import JWTTokenService
+from src.accounts.domain.services.password_hasher import PasswordHasher
+from src.accounts.domain.services.token_service import TokenService
 from src.accounts.infrastructure.messaging.email_notifier import ConsoleNotificationService
 from src.accounts.infrastructure.authentication.social.google_provider import GoogleAuthenticationProvider
 from src.accounts.application.providers import SocialProviders
@@ -23,10 +23,10 @@ class AccountsContainer(containers.DeclarativeContainer):
     audit_repository = providers.Factory(SQLAuditLogRepository)
 
     # Services
-    password_hasher = providers.Factory(Argon2PasswordHasher)
+    password_hasher = providers.Factory(PasswordHasher)
 
     token_service = providers.Singleton(
-        JWTTokenService,
+        TokenService,
         private_key=settings.provided.JWT_PRIVATE_KEY,
         public_key=settings.provided.JWT_PUBLIC_KEY,
         algorithm=settings.provided.JWT_ALGORITHM,

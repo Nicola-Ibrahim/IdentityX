@@ -1,7 +1,7 @@
 from typing import override
 from pydantic import BaseModel
 
-from src.accounts.application.interfaces.jwt import TokenService
+from src.accounts.domain.services.token_service import TokenService
 from src.building_blocks.application.mediator import BaseQuery, BaseQueryHandler
 
 

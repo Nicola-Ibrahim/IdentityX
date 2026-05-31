@@ -13,7 +13,7 @@ from src.accounts.domain.interfaces.session_repository import BaseSessionReposit
 from src.accounts.domain.services.audit_service import AuditService
 from src.accounts.domain.session.value_objects.refresh_token import RefreshToken
 from src.accounts.application.dtos.auth import TokenPair
-from src.accounts.application.interfaces.jwt import TokenService
+from src.accounts.domain.services.token_service import TokenService
 
 
 class RefreshSessionCommand(BaseModel, BaseCommand[TokenPair]):
@@ -37,8 +37,9 @@ class RefreshSessionHandler(BaseCommandHandler[RefreshSessionCommand, TokenPair]
 
     @override
     async def handle(self, command: RefreshSessionCommand) -> TokenPair:
-        claims = self._token_service.validate_refresh_token(command.refresh_token)
-        session = await self._session_repo.get_by_refresh_token(RefreshToken.create(command.refresh_token))
+        refresh_vo = RefreshToken.create(command.refresh_token)
+        claims = self._token_service.validate_refresh_token(refresh_vo)
+        session = await self._session_repo.get_by_refresh_token(refresh_vo)
 
         if not session:
             raise ValueError("Session not found")

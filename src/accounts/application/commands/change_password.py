@@ -7,9 +7,10 @@ from src.building_blocks.application.mediator import BaseCommand, BaseCommandHan
 from src.accounts.application.dtos.account import AccountDTO
 from src.accounts.domain.account.value_objects.account_id import AccountId
 from src.accounts.domain.account.value_objects.hashed_password import HashedPassword
+from src.accounts.domain.account.value_objects.password import Password
 from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
 from src.accounts.domain.interfaces.session_repository import BaseSessionRepository
-from src.accounts.application.interfaces.password_hasher import BasePasswordHasher
+from src.accounts.domain.services.password_hasher import PasswordHasher
 
 
 class ChangePasswordCommand(BaseModel, BaseCommand[AccountDTO]):
@@ -22,7 +23,7 @@ class ChangePasswordHandler(BaseCommandHandler[ChangePasswordCommand, AccountDTO
         self,
         account_repo: BaseAccountRepository,
         session_repo: BaseSessionRepository,
-        password_hasher: BasePasswordHasher,
+        password_hasher: PasswordHasher,
     ):
         self._account_repo = account_repo
         self._session_repo = session_repo
@@ -39,7 +40,8 @@ class ChangePasswordHandler(BaseCommandHandler[ChangePasswordCommand, AccountDTO
         if not account:
             raise ValueError("Account not found")
 
-        hashed = HashedPassword.create(self._password_hasher.encode(command.new_password))
+        password_vo = Password.create(command.new_password)
+        hashed = self._password_hasher.encode(password_vo)
         account.change_password(hashed)
 
         # Security Side Effect: Revoke all sessions on password change

@@ -8,7 +8,8 @@ from src.building_blocks.application.mediator import BaseCommand, BaseCommandHan
 from src.accounts.domain.account.value_objects.account_id import AccountId
 from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
 from src.accounts.application.dtos.auth import MfaSetup
-from src.accounts.application.interfaces.jwt import TokenService
+from src.accounts.domain.session.value_objects.mfa_token import MfaToken
+from src.accounts.domain.services.token_service import TokenService
 
 
 class SetupMfaCommand(BaseModel, BaseCommand[MfaSetup]):
@@ -22,7 +23,7 @@ class SetupMfaHandler(BaseCommandHandler[SetupMfaCommand, MfaSetup]):
 
     @override
     async def handle(self, command: SetupMfaCommand) -> MfaSetup:
-        claims = self._token_service.validate_mfa_token(command.mfa_token)
+        claims = self._token_service.validate_mfa_token(MfaToken.create(command.mfa_token))
         account = await self._account_repo.get_by_id(AccountId.create(uuid.UUID(claims.sub)))
         if not account:
             raise ValueError("Account not found")

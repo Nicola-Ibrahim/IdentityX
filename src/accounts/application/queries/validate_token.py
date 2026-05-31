@@ -1,9 +1,10 @@
 from typing import override
 from pydantic import BaseModel
 
-from src.accounts.application.interfaces.jwt import TokenService
+from src.accounts.domain.services.token_service import TokenService
 from src.accounts.domain.interfaces.session_repository import BaseSessionRepository
 from src.accounts.domain.session.token_errors import TokenRevokedException
+from src.accounts.domain.session.value_objects.access_token import AccessToken
 from src.accounts.domain.session.value_objects.session_id import SessionId
 from src.building_blocks.application.mediator import BaseQuery, BaseQueryHandler
 
@@ -20,7 +21,8 @@ class ValidateTokenHandler(BaseQueryHandler[ValidateTokenQuery, str]):
     @override
     async def handle(self, query: ValidateTokenQuery) -> str:
         # 1. Cryptographic Check (JWT Signature & Expiration)
-        claims = self._token_service.validate_access_token(query.token)
+        token_vo = AccessToken.create(query.token)
+        claims = self._token_service.validate_access_token(token_vo)
 
         # 2. Stateful Check (Revocation)
         # Access tokens should have an 'sid' (Session ID) claim linked to the database session.

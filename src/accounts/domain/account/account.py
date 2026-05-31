@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta, timezone
-
 from pydantic import Field
 
 from src.building_blocks.domain.aggregate_root import AggregateRoot
@@ -12,6 +11,22 @@ from src.accounts.domain.account.value_objects.mfa_settings import MfaSettings
 from src.accounts.domain.account.value_objects.session_id import SessionId
 from src.accounts.domain.account.value_objects.status import Status
 from src.accounts.domain.account.value_objects.trusted_device import TrustedDevice
+
+from src.accounts.domain.account.rules.account_cannot_be_verified_twice_rule import AccountCannotBeVerifiedTwiceRule
+from src.accounts.domain.account.rules.account_cannot_be_activated_if_already_active_rule import AccountCannotBeActivatedIfAlreadyActiveRule
+from src.accounts.domain.account.rules.account_cannot_be_deactivated_if_already_inactive_rule import AccountCannotBeDeactivatedIfAlreadyInactiveRule
+
+from src.accounts.domain.account.events.account_registered_event import AccountRegisteredEvent
+from src.accounts.domain.account.events.account_verified_event import AccountVerifiedEvent
+from src.accounts.domain.account.events.account_deactivated_event import AccountDeactivatedEvent
+from src.accounts.domain.account.events.password_changed_event import PasswordChangedEvent
+from src.accounts.domain.account.events.account_anonymized_event import AccountAnonymizedEvent
+from src.accounts.domain.account.events.account_activated_event import AccountActivatedEvent
+from src.accounts.domain.account.events.account_suspended_event import AccountSuspendedEvent
+from src.accounts.domain.account.events.email_changed_event import EmailChangedEvent
+from src.accounts.domain.account.events.mfa_enabled_event import MfaEnabledEvent
+from src.accounts.domain.account.events.mfa_disabled_event import MfaDisabledEvent
+from src.accounts.domain.account.events.device_trusted_event import DeviceTrustedEvent
 
 
 class Account(AggregateRoot[AccountId]):
@@ -34,7 +49,15 @@ class Account(AggregateRoot[AccountId]):
     @classmethod
     def register(cls, email: Email, password: HashedPassword) -> "Account":
         """Register a new account with email/password."""
-        return cls(id=AccountId.create(), email=email, password=password)
+        account = cls(id=AccountId.create(), email=email, password=password)
+        account.record_event(
+            AccountRegisteredEvent(
+                account_id=str(account.id.value),
+                email=str(account.email),
+                roles=[r.value for r in account.roles],
+            )
+        )
+        return account
 
     @classmethod
     def from_data(
@@ -73,6 +96,13 @@ class Account(AggregateRoot[AccountId]):
         """Register a new account from social SSO."""
         account = cls(id=AccountId.create(), email=email)
         account.link_external_identity(external_identity)
+        account.record_event(
+            AccountRegisteredEvent(
+                account_id=str(account.id.value),
+                email=str(account.email),
+                roles=[r.value for r in account.roles],
+            )
+        )
         return account
 
     # ------------------------------------------------------------------
@@ -80,28 +110,51 @@ class Account(AggregateRoot[AccountId]):
     # ------------------------------------------------------------------
 
     def verify(self) -> None:
+        self.check_rules(AccountCannotBeVerifiedTwiceRule(is_verified=self.is_verified))
         self.status = self.status.verify()
         self.touch()
+        self.record_event(AccountVerifiedEvent(account_id=str(self.id.value)))
 
     def suspend(self) -> None:
+        self.check_rules(AccountCannotBeDeactivatedIfAlreadyInactiveRule(is_active=self.is_active))
         self.status = self.status.suspend()
         self.touch()
+        self.record_event(AccountSuspendedEvent(account_id=str(self.id.value)))
 
     def activate(self) -> None:
+        self.check_rules(AccountCannotBeActivatedIfAlreadyActiveRule(is_active=self.is_active))
         self.status = self.status.activate()
         self.touch()
+        self.record_event(AccountActivatedEvent(account_id=str(self.id.value)))
 
     def deactivate(self) -> None:
+        self.check_rules(AccountCannotBeDeactivatedIfAlreadyInactiveRule(is_active=self.is_active))
         self.status = self.status.deactivate()
         self.touch()
+        self.record_event(AccountDeactivatedEvent(account_id=str(self.id.value)))
+
+    def anonymize(self) -> None:
+        """Scrubs PII for GDPR compliance and deactivates the account."""
+        self.check_rules(AccountCannotBeDeactivatedIfAlreadyInactiveRule(is_active=self.is_active))
+        # Scrub email and clear credentials/devices/mfa
+        self.email = Email.create(f"anonymized_{self.id.value}@identityx.local")
+        self.password = None
+        self.external_identities = []
+        self.mfa = MfaSettings.create_disabled()
+        self.trusted_devices = []
+        self.status = self.status.deactivate()
+        self.touch()
+        self.record_event(AccountAnonymizedEvent(account_id=str(self.id.value)))
 
     def change_email(self, new_email: Email) -> None:
         self.email = new_email
         self.touch()
+        self.record_event(EmailChangedEvent(account_id=str(self.id.value), new_email=str(new_email)))
 
     def change_password(self, new_password: HashedPassword) -> None:
         self.password = new_password
         self.touch()
+        self.record_event(PasswordChangedEvent(account_id=str(self.id.value)))
 
     def assign_role(self, role: AccountRole) -> None:
         self.roles.add(role)
@@ -122,10 +175,12 @@ class Account(AggregateRoot[AccountId]):
     def enable_mfa(self, secret: str, recovery_codes: list[str]) -> None:
         self.mfa = self.mfa.enable(secret, recovery_codes)
         self.touch()
+        self.record_event(MfaEnabledEvent(account_id=str(self.id.value)))
 
     def disable_mfa(self) -> None:
         self.mfa = self.mfa.disable()
         self.touch()
+        self.record_event(MfaDisabledEvent(account_id=str(self.id.value)))
 
     def consume_recovery_code(self, code: str) -> bool:
         success, new_mfa = self.mfa.verify_recovery_code(code)
@@ -142,9 +197,10 @@ class Account(AggregateRoot[AccountId]):
         # Add new
         expires_at = datetime.now(timezone.utc) + timedelta(days=ttl_days)
         self.trusted_devices.append(
-            TrustedDevice(device_hash=device_hash, user_agent=user_agent, ip_address=ip_address, expires_at=expires_at)
+            TrustedDevice.create(device_hash=device_hash, user_agent=user_agent, ip_address=ip_address, expires_at=expires_at)
         )
         self.touch()
+        self.record_event(DeviceTrustedEvent(account_id=str(self.id.value), device_hash=device_hash))
 
     # ------------------------------------------------------------------
     # Queries

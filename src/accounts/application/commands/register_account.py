@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 from src.accounts.application.dtos.account import AccountDTO
 from src.accounts.application.interfaces.notification_service import BaseNotificationService
-from src.accounts.application.interfaces.password_hasher import BasePasswordHasher
+from src.accounts.domain.services.password_hasher import PasswordHasher
 from src.accounts.domain.account.account import Account
 from src.accounts.domain.account.value_objects.email import Email
 from src.accounts.domain.account.value_objects.hashed_password import HashedPassword
@@ -22,7 +22,7 @@ class RegisterAccountHandler(BaseCommandHandler[RegisterAccountCommand, AccountD
         self,
         account_repo: BaseAccountRepository,
         notification_service: BaseNotificationService,
-        password_hasher: BasePasswordHasher,
+        password_hasher: PasswordHasher,
     ):
         self._account_repo = account_repo
         self._notification_service = notification_service
@@ -32,7 +32,7 @@ class RegisterAccountHandler(BaseCommandHandler[RegisterAccountCommand, AccountD
     async def handle(self, command: RegisterAccountCommand) -> AccountDTO:
         email_vo = Email.create(command.email)
         password_vo = Password.create(command.password)
-        hashed = HashedPassword.create(self._password_hasher.encode(password_vo.value))
+        hashed = self._password_hasher.encode(password_vo)
         account = Account.register(email=email_vo, password=hashed)
         await self._account_repo.add(account)
         await self._notification_service.send_welcome_email(str(email_vo))

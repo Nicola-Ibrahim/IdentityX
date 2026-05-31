@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 from src.accounts.domain.interfaces.session_repository import BaseSessionRepository
 from src.accounts.domain.session.value_objects.refresh_token import RefreshToken
-from src.accounts.application.interfaces.jwt import TokenService
+from src.accounts.domain.services.token_service import TokenService
 
 
 class LogoutCommand(BaseModel, BaseCommand[None]):
@@ -19,8 +19,9 @@ class LogoutHandler(BaseCommandHandler[LogoutCommand, None]):
     @override
     async def handle(self, command: LogoutCommand) -> None:
         try:
-            self._token_service.validate_refresh_token(command.refresh_token)
-            session = await self._session_repo.get_by_refresh_token(RefreshToken.create(command.refresh_token))
+            refresh_vo = RefreshToken.create(command.refresh_token)
+            self._token_service.validate_refresh_token(refresh_vo)
+            session = await self._session_repo.get_by_refresh_token(refresh_vo)
             if session:
                 session.revoke()
                 await self._session_repo.update(session)

@@ -12,7 +12,7 @@ from src.accounts.domain.interfaces.session_repository import BaseSessionReposit
 from src.accounts.domain.services.audit_service import AuditService
 from src.accounts.application.commands.helpers import issue_session
 from src.accounts.application.dtos.auth import AuthDTO
-from src.accounts.application.interfaces.jwt import TokenService
+from src.accounts.domain.services.token_service import TokenService
 from src.accounts.application.providers import SocialProviders
 
 

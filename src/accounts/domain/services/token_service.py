@@ -1,19 +1,43 @@
-import base64
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import jwt
-from cryptography.hazmat.primitives import serialization
+from pydantic import BaseModel, Field
 
-from src.accounts.application.interfaces.jwt import TokenPayload, TokenService, ValidatedClaims
 from src.accounts.domain.session.token_errors import (
     TokenExpiredException,
     TokenInvalidException,
 )
+from src.accounts.domain.session.value_objects.access_token import AccessToken
+from src.accounts.domain.session.value_objects.mfa_token import MfaToken
+from src.accounts.domain.session.value_objects.refresh_token import RefreshToken
 
 
-class JWTTokenService(TokenService):
+class TokenPayload(BaseModel):
+    """Basic claims required to issue a token pair."""
+
+    sub: str = Field(..., description="Subject (account_id)")
+    sid: str | None = Field(None, description="Session ID")
+
+
+class ValidatedClaims(BaseModel):
+    """Modern Pydantic model for JWT payload validation."""
+
+    sub: str = Field(..., description="Subject (account_id)")
+    sid: str | None = Field(None, description="Session ID")
+    jti: str = Field(..., description="Unique token identifier")
+    exp: int = Field(..., description="Expiration timestamp (Unix)")
+    iat: int = Field(..., description="Issued at timestamp (Unix)")
+    typ: str = Field(..., description="Token type: 'access' or 'refresh'")
+    iss: str | None = Field(None, description="Issuer identifier")
+
+    @property
+    def exp_datetime(self) -> datetime:
+        return datetime.fromtimestamp(self.exp, tz=timezone.utc)
+
+
+class TokenService:
     def __init__(
         self,
         private_key: str,
@@ -31,14 +55,14 @@ class JWTTokenService(TokenService):
         self._refresh_token_ttl = timedelta(days=refresh_token_ttl_days)
         self._mfa_token_ttl = timedelta(minutes=5)
 
-    def create_tokens(self, claims: TokenPayload) -> tuple[str, str]:
+    def create_tokens(self, claims: TokenPayload) -> tuple[AccessToken, RefreshToken]:
         now = datetime.now(timezone.utc)
         base_claims = claims.model_dump(exclude_none=True)
 
-        access_token = self._create_access_token(base_claims, now)
-        refresh_token = self._create_refresh_token(claims.sub, now)
+        access_token_str = self._create_access_token(base_claims, now)
+        refresh_token_str = self._create_refresh_token(claims.sub, now)
 
-        return access_token, refresh_token
+        return AccessToken.create(access_token_str), RefreshToken.create(refresh_token_str)
 
     def _create_access_token(self, base_claims: dict[str, Any], now: datetime) -> str:
         payload = {
@@ -62,19 +86,19 @@ class JWTTokenService(TokenService):
         }
         return jwt.encode(payload, self._private_key, algorithm=self._algorithm)
 
-    def validate_access_token(self, token: str) -> ValidatedClaims:
-        claims = self.validate(token)
+    def validate_access_token(self, token: AccessToken) -> ValidatedClaims:
+        claims = self.validate(token.value)
         if claims.typ != "access":
             raise TokenInvalidException(f"Token type mismatch: expected access, got {claims.typ}")
         return claims
 
-    def validate_refresh_token(self, token: str) -> ValidatedClaims:
-        claims = self.validate(token)
+    def validate_refresh_token(self, token: RefreshToken) -> ValidatedClaims:
+        claims = self.validate(token.value)
         if claims.typ != "refresh":
             raise TokenInvalidException(f"Token type mismatch: expected refresh, got {claims.typ}")
         return claims
 
-    def create_mfa_token(self, claims: TokenPayload) -> str:
+    def create_mfa_token(self, claims: TokenPayload) -> MfaToken:
         now = datetime.now(timezone.utc)
         payload = {
             **claims.model_dump(exclude_none=True),
@@ -84,10 +108,10 @@ class JWTTokenService(TokenService):
             "iss": self._issuer,
             "typ": "mfa",
         }
-        return jwt.encode(payload, self._private_key, algorithm=self._algorithm)
+        return MfaToken.create(jwt.encode(payload, self._private_key, algorithm=self._algorithm))
 
-    def validate_mfa_token(self, token: str) -> ValidatedClaims:
-        claims = self.validate(token)
+    def validate_mfa_token(self, token: MfaToken) -> ValidatedClaims:
+        claims = self.validate(token.value)
         if claims.typ != "mfa":
             raise TokenInvalidException(f"Token type mismatch: expected mfa, got {claims.typ}")
         return claims
@@ -108,21 +132,18 @@ class JWTTokenService(TokenService):
 
     def get_public_key_jwk(self) -> dict:
         """Return the public key in JSON Web Key format."""
-        # Load the public key using cryptography
+        from cryptography.hazmat.primitives import serialization
+
+        # Load public key using cryptography
         public_key = serialization.load_pem_public_key(self._public_key.encode())
-        numbers = public_key.public_numbers()
 
-        # Helper to base64url encode integers
-        def to_base64url(val: int) -> str:
-            # Convert integer to bytes
-            byte_val = val.to_bytes((val.bit_length() + 7) // 8, byteorder="big")
-            return base64.urlsafe_b64encode(byte_val).decode().rstrip("=")
-
+        # Generate JWK via pyjwt native functionality
+        alg = jwt.algorithms.RSAAlgorithm(jwt.algorithms.RSAAlgorithm.SHA256)
+        jwk = alg.to_jwk(public_key)
+        
+        # Merge standard key id and usage fields
         return {
-            "kty": "RSA",
-            "alg": self._algorithm,
+            **jwk,
             "use": "sig",
             "kid": "identityx-main-key",  # Stable ID for this key
-            "n": to_base64url(numbers.n),
-            "e": to_base64url(numbers.e),
         }

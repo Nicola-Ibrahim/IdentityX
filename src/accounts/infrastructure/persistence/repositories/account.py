@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from src.buckets.database.repository import SQLBaseRepository
 from src.building_blocks.infrastructure.persistance.exceptions import RecordConflictError, RecordNotFoundError
+from src.building_blocks.application.mediator import Mediator
 
 from src.accounts.domain.account.account import Account
 from src.accounts.domain.account.enums.account_role import AccountRole
@@ -24,7 +25,8 @@ from src.accounts.infrastructure.persistence.orm.models import AccountTable, Ext
 class SQLBaseAccountRepository(SQLBaseRepository[AccountTable], BaseAccountRepository):
     """SQLAlchemy implementation of :class:`BaseAccountRepository`."""
 
-    def __init__(self):
+    def __init__(self, mediator: Mediator | None = None):
+        self._mediator = mediator
         super().__init__(AccountTable)
 
     def _to_domain(self, record: AccountTable) -> Account:
@@ -105,6 +107,11 @@ class SQLBaseAccountRepository(SQLBaseRepository[AccountTable], BaseAccountRepos
         except IntegrityError:
             raise RecordConflictError(identifier=str(account.email))
 
+        # Dispatch events
+        if self._mediator:
+            for event in account.pull_events():
+                await self._mediator.publish(event)
+
     async def update(self, account: Account) -> None:
         result = await self.session.execute(
             select(AccountTable)
@@ -142,6 +149,13 @@ class SQLBaseAccountRepository(SQLBaseRepository[AccountTable], BaseAccountRepos
             )
             for d in account.trusted_devices
         ]
+
+        await self.session.flush()
+
+        # Dispatch events
+        if self._mediator:
+            for event in account.pull_events():
+                await self._mediator.publish(event)
 
     async def get_by_id(self, account_id: AccountId) -> Account | None:
         stmt = (
