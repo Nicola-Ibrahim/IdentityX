@@ -5,7 +5,6 @@ from sqlalchemy.orm import joinedload
 
 from src.buckets.database.repository import SQLBaseRepository
 from src.building_blocks.infrastructure.persistance.exceptions import RecordNotFoundError
-from src.building_blocks.application.mediator import Mediator
 
 from src.accounts.domain.interfaces.session_repository import BaseSessionRepository
 from src.accounts.domain.session.session import Session
@@ -19,8 +18,7 @@ from src.accounts.infrastructure.persistence.orm.models import SessionTable
 class SQLBaseSessionRepository(SQLBaseRepository[SessionTable], BaseSessionRepository):
     """SQLAlchemy repository for session aggregates."""
 
-    def __init__(self, mediator: Mediator | None = None) -> None:
-        self._mediator = mediator
+    def __init__(self) -> None:
         super().__init__(SessionTable)
 
     def _to_domain(self, record: SessionTable) -> Session:
@@ -52,10 +50,6 @@ class SQLBaseSessionRepository(SQLBaseRepository[SessionTable], BaseSessionRepos
         self.session.add(record)
         await self.session.flush()
 
-        if self._mediator:
-            for event in session.pull_events():
-                await self._mediator.publish(event)
-
     async def update(self, session: Session) -> None:
         stmt = select(SessionTable).filter(SessionTable.id == session.id.value)
         result = await self.session.execute(stmt)
@@ -70,10 +64,6 @@ class SQLBaseSessionRepository(SQLBaseRepository[SessionTable], BaseSessionRepos
         record.is_revoked = session.is_revoked
 
         await self.session.flush()
-
-        if self._mediator:
-            for event in session.pull_events():
-                await self._mediator.publish(event)
 
     async def get_by_id(self, session_id: SessionId) -> Session | None:
         stmt = (

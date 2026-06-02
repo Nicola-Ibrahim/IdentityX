@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from src.accounts.application.dtos.account import AccountDTO
 from src.accounts.domain.account.value_objects.account_id import AccountId
 from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
+from src.building_blocks.application.events.base_event_bus import BaseEventBus
 from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 
 
@@ -14,8 +15,9 @@ class ActivateAccountCommand(BaseModel, BaseCommand[AccountDTO]):
 
 
 class ActivateAccountHandler(BaseCommandHandler[ActivateAccountCommand, AccountDTO]):
-    def __init__(self, account_repo: BaseAccountRepository):
+    def __init__(self, account_repo: BaseAccountRepository, event_bus: BaseEventBus):
         self._account_repo = account_repo
+        self._event_bus = event_bus
 
     @override
     async def handle(self, command: ActivateAccountCommand) -> AccountDTO:
@@ -30,6 +32,7 @@ class ActivateAccountHandler(BaseCommandHandler[ActivateAccountCommand, AccountD
 
         account.activate()
         await self._account_repo.update(account)
+        await self._event_bus.publish_all(account.pull_events())
         return AccountDTO(
             id=str(account.id.value),
             email=str(account.email),

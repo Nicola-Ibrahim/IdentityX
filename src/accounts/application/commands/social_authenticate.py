@@ -1,6 +1,7 @@
 from typing import override
 from pydantic import BaseModel
 
+from src.building_blocks.application.events.base_event_bus import BaseEventBus
 from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 from src.accounts.domain.account.account import Account
 from src.accounts.domain.account.value_objects.email import Email
@@ -32,6 +33,7 @@ class SocialAuthenticateHandler(BaseCommandHandler[SocialAuthenticateCommand, Au
         audit_repo: BaseAuditRepository,
         audit_service: AuditService,
         token_service: TokenService,
+        event_bus: BaseEventBus,
     ):
         self._providers = providers
         self._account_repo = account_repo
@@ -39,6 +41,7 @@ class SocialAuthenticateHandler(BaseCommandHandler[SocialAuthenticateCommand, Au
         self._audit_repo = audit_repo
         self._audit = audit_service
         self._token_service = token_service
+        self._event_bus = event_bus
 
     @override
     async def handle(self, command: SocialAuthenticateCommand) -> AuthDTO:
@@ -57,6 +60,7 @@ class SocialAuthenticateHandler(BaseCommandHandler[SocialAuthenticateCommand, Au
             if account:
                 account.link_external_identity(external_id)
                 await self._account_repo.update(account)
+                await self._event_bus.publish_all(account.pull_events())
                 audit_entry = self._audit.create_entry(
                     AuditAction.SOCIAL_LINKED,
                     command.ip_address,
@@ -71,6 +75,7 @@ class SocialAuthenticateHandler(BaseCommandHandler[SocialAuthenticateCommand, Au
                 )
                 account.verify()
                 await self._account_repo.add(account)
+                await self._event_bus.publish_all(account.pull_events())
                 audit_entry = self._audit.create_entry(
                     AuditAction.ACCOUNT_REGISTERED,
                     command.ip_address,
@@ -89,5 +94,6 @@ class SocialAuthenticateHandler(BaseCommandHandler[SocialAuthenticateCommand, Au
             audit_repo=self._audit_repo,
             audit_service=self._audit,
             action=AuditAction.LOGIN_SUCCESS,
+            event_bus=self._event_bus,
         )
         return AuthDTO(tokens=tokens)

@@ -14,6 +14,7 @@ from src.accounts.domain.services.audit_service import AuditService
 from src.accounts.domain.session.session import Session
 from src.accounts.domain.session.value_objects.refresh_token import RefreshToken
 from src.accounts.domain.session.value_objects.session_id import SessionId
+from src.building_blocks.application.events.base_event_bus import BaseEventBus
 from src.accounts.application.dtos.auth import AuthDTO, MfaChallenge, TokenPair
 from src.accounts.domain.services.token_service import TokenPayload, TokenService
 from src.accounts.domain.services.password_hasher import PasswordHasher
@@ -37,6 +38,7 @@ class AuthenticateHandler(BaseCommandHandler[AuthenticateCommand, AuthDTO]):
         password_hasher: PasswordHasher,
         token_service: TokenService,
         audit_service: AuditService,
+        event_bus: BaseEventBus,
     ):
         self._account_repo = account_repo
         self._session_repo = session_repo
@@ -44,6 +46,7 @@ class AuthenticateHandler(BaseCommandHandler[AuthenticateCommand, AuthDTO]):
         self._hasher = password_hasher
         self._token_service = token_service
         self._audit = audit_service
+        self._event_bus = event_bus
 
     async def _issue_session(
         self, account: Account, ip_address: str, user_agent: str, action: AuditAction = AuditAction.LOGIN_SUCCESS
@@ -63,6 +66,7 @@ class AuthenticateHandler(BaseCommandHandler[AuthenticateCommand, AuthDTO]):
         )
 
         await self._session_repo.add(session)
+        await self._event_bus.publish_all(session.pull_events())
         audit_entry = self._audit.create_entry(action, ip_address, user_agent, account_id=account.id)
         await self._audit_repo.add(audit_entry)
 

@@ -8,6 +8,9 @@ from src.accounts.application.dtos.auth import TokenPair
 from src.accounts.domain.services.token_service import TokenPayload
 
 
+from src.building_blocks.application.events.base_event_bus import BaseEventBus
+
+
 async def issue_session(
     account,
     ip_address: str,
@@ -18,6 +21,7 @@ async def issue_session(
     audit_service,
     action: AuditAction = AuditAction.LOGIN_SUCCESS,
     session_ttl: timedelta = None,
+    event_bus: BaseEventBus | None = None,
 ) -> TokenPair:
     """Helper to issue a new session and JWT token pair."""
     session_id = SessionId.create()
@@ -34,6 +38,10 @@ async def issue_session(
     )
 
     await session_repo.add(session)
+    if event_bus:
+        events = session.pull_events()
+        if events:
+            await event_bus.publish_all(events)
     audit_entry = audit_service.create_entry(action, ip_address, user_agent, account_id=account.id)
     await audit_repo.add(audit_entry)
 

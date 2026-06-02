@@ -14,12 +14,20 @@ from src.accounts.infrastructure.configuration.containers import AccountsContain
 from src.accounts.infrastructure.module import AccountModule
 from src.buckets.database.transaction import TransactionBehavior
 from src.building_blocks.application.mediator import Mediator, ServiceContainer
+from src.building_blocks.application.events import BaseEventBus
+from src.building_blocks.infrastructure.events import LocalEventBus
 
 
 class AccountsStartUp:
     """
     Handles the initialization of the Accounts module, wiring the DI container
-    with the Mediator and the Facade.
+    with the Mediator, EventBus, and the Facade.
+
+    Separation of concerns:
+      - ``Mediator``     → Application CQRS (Commands + Queries, 1-to-1).
+      - ``EventBus``     → Domain event dispatching (1-to-many).  The concrete
+                           ``LocalEventBus`` can be swapped for a broker-backed
+                           implementation by changing only this file.
     """
 
     def __init__(self) -> None:
@@ -43,18 +51,30 @@ class AccountsStartUp:
             # Resolve the database session factory from the passed DB container/factory
             session_factory = database()
 
-            # Set up transaction behavior wrapping commands
-            behaviors = [TransactionBehavior(session_factory=session_factory)]
+            # 3. Configure Event Bus (Domain Events, 1-to-many)
+            event_bus = LocalEventBus(container=container)
+            container.register(BaseEventBus, lambda: event_bus)
 
-            # 4. Configure the localized Mediator
+            # 4. Set up transaction behaviors wrapping commands
+            behaviors = [
+                TransactionBehavior(session_factory=session_factory),
+            ]
+
+            # 5. Configure the CQRS Mediator (Commands + Queries only)
             mediator = Mediator(container=container, behaviors=behaviors)
-
-            # Wire up repositories and Mediator
-            container.register(BaseAccountRepository, lambda: self._container.account_repository(mediator=mediator))
-            container.register(BaseSessionRepository, lambda: self._container.session_repository(mediator=mediator))
             container.register(Mediator, lambda: mediator)
 
-            # 5. Initialize the Facade (AccountModule)
+            # 6. Wire repositories (pure persistence)
+            container.register(
+                BaseAccountRepository,
+                lambda: self._container.account_repository(),
+            )
+            container.register(
+                BaseSessionRepository,
+                lambda: self._container.session_repository(),
+            )
+
+            # 7. Initialize the Facade (AccountModule)
             self._module = AccountModule(mediator)
 
             return self

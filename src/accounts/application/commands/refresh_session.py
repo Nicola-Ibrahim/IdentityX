@@ -3,6 +3,7 @@ import uuid
 
 from pydantic import BaseModel
 
+from src.building_blocks.application.events.base_event_bus import BaseEventBus
 from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 from src.accounts.application.commands.helpers import issue_session
 from src.accounts.domain.account.value_objects.account_id import AccountId
@@ -28,12 +29,14 @@ class RefreshSessionHandler(BaseCommandHandler[RefreshSessionCommand, TokenPair]
         account_repo: BaseAccountRepository,
         audit_repo: BaseAuditRepository,
         audit_service: AuditService,
+        event_bus: BaseEventBus,
     ):
         self._token_service = token_service
         self._session_repo = session_repo
         self._account_repo = account_repo
         self._audit_repo = audit_repo
         self._audit = audit_service
+        self._event_bus = event_bus
 
     @override
     async def handle(self, command: RefreshSessionCommand) -> TokenPair:
@@ -52,6 +55,7 @@ class RefreshSessionHandler(BaseCommandHandler[RefreshSessionCommand, TokenPair]
 
         session.revoke()
         await self._session_repo.update(session)
+        await self._event_bus.publish_all(session.pull_events())
 
         account = await self._account_repo.get_by_id(AccountId.create(uuid.UUID(claims.sub)))
         if not account:
@@ -66,4 +70,5 @@ class RefreshSessionHandler(BaseCommandHandler[RefreshSessionCommand, TokenPair]
             audit_repo=self._audit_repo,
             audit_service=self._audit,
             action=AuditAction.SESSION_REFRESHED,
+            event_bus=self._event_bus,
         )

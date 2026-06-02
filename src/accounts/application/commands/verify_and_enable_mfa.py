@@ -1,11 +1,12 @@
-from typing import override
 import uuid
 from datetime import datetime, timedelta, timezone
+from typing import override
 
 import pyotp
 from pydantic import BaseModel
 
-from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from src.accounts.application.dtos.account import AccountDTO
+from src.accounts.application.dtos.auth import TokenPair
 from src.accounts.domain.account.account import Account
 from src.accounts.domain.account.value_objects.account_id import AccountId
 from src.accounts.domain.audit.audit_action import AuditAction
@@ -13,13 +14,12 @@ from src.accounts.domain.interfaces.account_repository import BaseAccountReposit
 from src.accounts.domain.interfaces.audit_repository import BaseAuditRepository
 from src.accounts.domain.interfaces.session_repository import BaseSessionRepository
 from src.accounts.domain.services.audit_service import AuditService
-from src.accounts.domain.session.session import Session
-from src.accounts.domain.session.value_objects.refresh_token import RefreshToken
-from src.accounts.domain.session.value_objects.session_id import SessionId
-from src.accounts.domain.session.value_objects.mfa_token import MfaToken
-from src.accounts.application.dtos.account import AccountDTO
-from src.accounts.application.dtos.auth import TokenPair
 from src.accounts.domain.services.token_service import TokenPayload, TokenService
+from src.accounts.domain.session.session import Session
+from src.accounts.domain.session.value_objects.mfa_token import MfaToken
+from src.accounts.domain.session.value_objects.session_id import SessionId
+from src.building_blocks.application.events.base_event_bus import BaseEventBus
+from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 
 
 class VerifyAndEnableMfaCommand(BaseModel, BaseCommand[AccountDTO]):
@@ -39,12 +39,14 @@ class VerifyAndEnableMfaHandler(BaseCommandHandler[VerifyAndEnableMfaCommand, Ac
         session_repo: BaseSessionRepository,
         audit_repo: BaseAuditRepository,
         audit_service: AuditService,
+        event_bus: BaseEventBus,
     ):
         self._token_service = token_service
         self._account_repo = account_repo
         self._session_repo = session_repo
         self._audit_repo = audit_repo
         self._audit = audit_service
+        self._event_bus = event_bus
 
     async def _issue_session(
         self, account: Account, ip_address: str, user_agent: str, action: AuditAction = AuditAction.LOGIN_SUCCESS
@@ -64,6 +66,7 @@ class VerifyAndEnableMfaHandler(BaseCommandHandler[VerifyAndEnableMfaCommand, Ac
         )
 
         await self._session_repo.add(session)
+        await self._event_bus.publish_all(session.pull_events())
         audit_entry = self._audit.create_entry(action, ip_address, user_agent, account_id=account.id)
         await self._audit_repo.add(audit_entry)
 
@@ -94,6 +97,7 @@ class VerifyAndEnableMfaHandler(BaseCommandHandler[VerifyAndEnableMfaCommand, Ac
 
         account.enable_mfa(command.secret, command.recovery_codes)
         await self._account_repo.update(account)
+        await self._event_bus.publish_all(account.pull_events())
 
         audit_entry = self._audit.create_entry(
             AuditAction.MFA_ENABLED, command.ip_address, command.user_agent, account_id=account.id

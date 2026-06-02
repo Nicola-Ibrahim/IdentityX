@@ -6,7 +6,6 @@ import sys
 from typing import Any, Callable, TypeVar, get_args, get_origin
 
 from src.building_blocks.application.mediator.messages.commands import BaseCommand, BaseCommandHandler
-from src.building_blocks.application.mediator.messages.notifications import BaseNotification, BaseNotificationHandler
 from src.building_blocks.application.mediator.messages.queries import BaseQuery, BaseQueryHandler
 from src.building_blocks.application.mediator.core.behaviors import BaseBehavior
 from src.building_blocks.application.mediator.core.exceptions import HandlerNotFoundError
@@ -15,7 +14,18 @@ from src.building_blocks.application.mediator.core.provider import ServiceContai
 
 class Mediator:
     """
-    A lightweight, localized Mediator inspired by MediatR (C#).
+    Lightweight, in-process CQRS Mediator.
+
+    Responsibilities (strict 1-to-1):
+      - ``execute(command)``  → dispatches a ``BaseCommand`` to its single handler.
+      - ``query(query)``      → dispatches a ``BaseQuery`` to its single handler.
+
+    Domain event dispatching (1-to-many) is intentionally **not** the
+    Mediator's responsibility.  Use ``BaseEventBus`` / ``LocalEventBus`` for
+    domain events.
+
+    Pipeline behaviors (logging, validation, transactions) are applied around
+    every command/query dispatch via the ``behaviors`` list.
     """
 
     def __init__(
@@ -25,7 +35,6 @@ class Mediator:
     ) -> None:
         self._container = container
         self._registry: dict[type, type] = {}
-        self._notification_registry: dict[type, list[type]] = {}
         self._behaviors = behaviors or []
         self.auto_discover()
 
@@ -36,10 +45,11 @@ class Mediator:
     def auto_discover(self) -> None:
         """
         Scans all packages in the project, imports them to register subclasses,
-        and builds the handler registries based on base class generics.
+        and builds the handler registry based on base class generics.
+        Only ``BaseCommandHandler`` and ``BaseQueryHandler`` subclasses are
+        discovered — notifications are handled by the EventBus.
         """
         search_path = sys.path[0] or os.getcwd()
-
         path = os.path.abspath(search_path)
 
         if path not in sys.path:
@@ -47,7 +57,6 @@ class Mediator:
 
         ignore_dirs = {".git", ".venv", "venv", "__pycache__", "tests"}
 
-        # Find and walk all directories to import python modules
         if os.path.isdir(path):
             for item in os.listdir(path):
                 item_path = os.path.join(path, item)
@@ -64,8 +73,8 @@ class Mediator:
                     except Exception:
                         pass
 
-        # Register command, query, and notification handlers recursively
-        for handler_base in (BaseCommandHandler, BaseQueryHandler, BaseNotificationHandler):
+        # Register command and query handlers ONLY (not notifications)
+        for handler_base in (BaseCommandHandler, BaseQueryHandler):
             self._register_subclasses(handler_base)
 
     def _register_subclasses(self, base_cls: type) -> None:
@@ -82,13 +91,7 @@ class Mediator:
 
             request_type = self._extract_request_type(handler_cls)
             if request_type:
-                if issubclass(handler_cls, BaseNotificationHandler):
-                    if request_type not in self._notification_registry:
-                        self._notification_registry[request_type] = []
-                    if handler_cls not in self._notification_registry[request_type]:
-                        self._notification_registry[request_type].append(handler_cls)
-                else:
-                    self._registry[request_type] = handler_cls
+                self._registry[request_type] = handler_cls
 
     def _extract_request_type(self, handler_cls: type) -> type | None:
         for cls in handler_cls.__mro__:
@@ -96,7 +99,7 @@ class Mediator:
             for base in orig_bases:
                 origin = get_origin(base) or base
                 if isinstance(origin, type) and issubclass(
-                    origin, (BaseCommandHandler, BaseQueryHandler, BaseNotificationHandler)
+                    origin, (BaseCommandHandler, BaseQueryHandler)
                 ):
                     args = get_args(base)
                     if args:
@@ -110,28 +113,6 @@ class Mediator:
 
     async def query[TResponse](self, query: BaseQuery[TResponse]) -> TResponse:
         return await self._dispatch(query)
-
-    async def publish(self, notification: BaseNotification) -> None:
-        """
-        Publishes a notification to all registered notification handlers.
-        Handlers are executed sequentially by default (matching MediatR's ForeachAwaitPublisher).
-        This prevents concurrency issues with shared resources like SQLAlchemy AsyncSessions.
-        """
-        handler_classes = self._notification_registry.get(type(notification), [])
-        if not handler_classes:
-            return
-
-        if self._container is None:
-            raise RuntimeError(
-                "Mediator: Service container is not set. Call set_container() or pass container during initialization."
-            )
-
-        handlers = [self._container.resolve(h_cls) for h_cls in handler_classes]
-
-        # Execute sequentially. If one handler raises an exception, the publishing aborts,
-        # mirroring the standard MediatR behavior.
-        for handler in handlers:
-            await handler.handle(notification)
 
     async def _dispatch(self, request: Any) -> Any:
         handler_type = self._registry.get(type(request))

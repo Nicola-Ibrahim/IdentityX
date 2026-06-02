@@ -3,6 +3,7 @@ from typing import Any, override
 
 from pydantic import BaseModel
 
+from src.building_blocks.application.events.base_event_bus import BaseEventBus
 from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 from src.accounts.domain.account.value_objects.account_id import AccountId
 from src.accounts.domain.account.value_objects.email import Email
@@ -16,8 +17,9 @@ class UpdateAccountCommand(BaseModel, BaseCommand[AccountDTO]):
 
 
 class UpdateAccountHandler(BaseCommandHandler[UpdateAccountCommand, AccountDTO]):
-    def __init__(self, account_repo: BaseAccountRepository):
+    def __init__(self, account_repo: BaseAccountRepository, event_bus: BaseEventBus):
         self._account_repo = account_repo
+        self._event_bus = event_bus
 
     @override
     async def handle(self, command: UpdateAccountCommand) -> AccountDTO:
@@ -34,6 +36,7 @@ class UpdateAccountHandler(BaseCommandHandler[UpdateAccountCommand, AccountDTO])
             account.change_email(Email.create(command.data["email"]))
 
         await self._account_repo.update(account)
+        await self._event_bus.publish_all(account.pull_events())
         return AccountDTO(
             id=str(account.id.value),
             email=str(account.email),

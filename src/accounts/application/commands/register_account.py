@@ -1,6 +1,7 @@
 from typing import override
 from pydantic import BaseModel
 
+from src.building_blocks.application.events.base_event_bus import BaseEventBus
 from src.accounts.application.dtos.account import AccountDTO
 from src.accounts.application.interfaces.notification_service import BaseNotificationService
 from src.accounts.domain.services.password_hasher import PasswordHasher
@@ -23,10 +24,12 @@ class RegisterAccountHandler(BaseCommandHandler[RegisterAccountCommand, AccountD
         account_repo: BaseAccountRepository,
         notification_service: BaseNotificationService,
         password_hasher: PasswordHasher,
+        event_bus: BaseEventBus,
     ):
         self._account_repo = account_repo
         self._notification_service = notification_service
         self._password_hasher = password_hasher
+        self._event_bus = event_bus
 
     @override
     async def handle(self, command: RegisterAccountCommand) -> AccountDTO:
@@ -35,6 +38,7 @@ class RegisterAccountHandler(BaseCommandHandler[RegisterAccountCommand, AccountD
         hashed = self._password_hasher.encode(password_vo)
         account = Account.register(email=email_vo, password=hashed)
         await self._account_repo.add(account)
+        await self._event_bus.publish_all(account.pull_events())
         await self._notification_service.send_welcome_email(str(email_vo))
         return AccountDTO(
             id=str(account.id.value),
