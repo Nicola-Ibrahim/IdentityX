@@ -2,10 +2,9 @@ from datetime import datetime, timedelta, timezone
 
 from src.accounts.domain.audit.audit_action import AuditAction
 from src.accounts.domain.session.session import Session
-from src.accounts.domain.session.value_objects.refresh_token import RefreshToken
 from src.accounts.domain.session.value_objects.session_id import SessionId
-from src.accounts.application.dtos.auth import TokenPair
-from src.accounts.domain.services.token_service import TokenPayload
+from src.accounts.application.session.dtos.session import TokenPair
+from src.accounts.domain.session.services.token_service import TokenPayload
 
 
 from src.building_blocks.application.events.base_event_bus import BaseEventBus

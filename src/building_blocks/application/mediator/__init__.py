@@ -2,14 +2,15 @@
 IdentityX Mediator — Application CQRS Dispatcher.
 
 This module provides a lightweight, in-process Mediator for **Commands** and
-**Queries** only (strict 1-to-1 dispatch).
+**Queries** only (strict 1-to-1 dispatch). Handler discovery is performed
+internally at construction time.
 
 Domain event dispatching (1-to-many) is handled by the EventBus:
   - Abstract contract : ``building_blocks.application.events.BaseEventBus``
   - In-memory impl   : ``building_blocks.infrastructure.events.LocalEventBus``
 
 Folder Structure:
-    - core/       : Framework engine (Mediator, ServiceContainer, Behaviors, Exceptions)
+    - core/       : Framework engine (Mediator, Behaviors, Exceptions)
     - messages/   : Message primitives and handler contracts (Commands, Queries)
 
 Usage Examples:
@@ -30,9 +31,11 @@ Usage Examples:
 
     2. Executing with the Mediator::
 
-        from src.building_blocks.application.mediator import Mediator, ServiceContainer
+        from src.building_blocks.application.mediator import Mediator
+        from lagom import Container
 
-        container = ServiceContainer()
+        container = Container()
+        # Mediator automatically discovers all command/query handlers internally
         mediator  = Mediator(container=container)
         user_id   = await mediator.execute(RegisterUserCommand(username="alice"))
 
@@ -49,16 +52,13 @@ Usage Examples:
 """
 
 from src.building_blocks.application.mediator.core.mediator import Mediator
-from src.building_blocks.application.mediator.core.provider import ServiceContainer
 from src.building_blocks.application.mediator.core.behaviors import BaseBehavior
 from src.building_blocks.application.mediator.core.exceptions import MediatorError, HandlerNotFoundError
-
 from src.building_blocks.application.mediator.messages.commands import BaseCommand, BaseCommandHandler
 from src.building_blocks.application.mediator.messages.queries import BaseQuery, BaseQueryHandler
 
 __all__ = [
     "Mediator",
-    "ServiceContainer",
     "BaseBehavior",
     "MediatorError",
     "HandlerNotFoundError",

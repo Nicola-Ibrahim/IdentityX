@@ -6,38 +6,35 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_limiter.depends import RateLimiter
 from pyrate_limiter import Duration, Limiter, Rate
 
+from src.accounts.application.account.commands.register_account import RegisterAccountCommand
+from src.accounts.application.account.commands.update_account import UpdateAccountCommand
+from src.accounts.application.account.commands.verify_account import VerifyAccountCommand
+from src.accounts.application.account.queries.get_account_by_id import GetAccountByIdQuery
 from src.accounts.application.interfaces.account_module import BaseAccountModule
+from src.accounts.application.session.commands.authenticate import AuthenticateCommand
+from src.accounts.application.session.commands.authenticate_mfa import AuthenticateMfaCommand
+from src.accounts.application.session.commands.logout import LogoutCommand
+from src.accounts.application.session.commands.refresh_session import RefreshSessionCommand
+from src.accounts.application.session.commands.setup_mfa import SetupMfaCommand
+from src.accounts.application.session.commands.social_authenticate import SocialAuthenticateCommand
+from src.accounts.application.session.commands.verify_and_enable_mfa import VerifyAndEnableMfaCommand
+from src.accounts.application.session.queries.get_social_auth_url import GetSocialAuthUrlQuery
+from src.api.core.exceptions import APIError, raise_http
 from src.api.core.responses import APIResponse, SuccessResponse
-from src.api.core.exceptions import raise_http
-from src.api.core.security.dependencies import get_current_account_id, get_account_module
-
-from src.accounts.application.commands.register_account import RegisterAccountCommand
-from src.accounts.application.commands.verify_account import VerifyAccountCommand
-from src.accounts.application.commands.authenticate import AuthenticateCommand
-from src.accounts.application.commands.refresh_session import RefreshSessionCommand
-from src.accounts.application.commands.logout import LogoutCommand
-from src.accounts.application.commands.update_account import UpdateAccountCommand
-from src.accounts.application.commands.setup_mfa import SetupMfaCommand
-from src.accounts.application.commands.verify_and_enable_mfa import VerifyAndEnableMfaCommand
-from src.accounts.application.commands.authenticate_mfa import AuthenticateMfaCommand
-from src.accounts.application.commands.social_authenticate import SocialAuthenticateCommand
-
-from src.accounts.application.queries.get_account_by_id import GetAccountByIdQuery
-from src.accounts.application.queries.get_social_auth_url import GetSocialAuthUrlQuery
-
+from src.api.core.security.dependencies import get_account_module, get_current_account_id
 from src.api.routers.v1.accounts.requests import (
+    MfaEnableRequest,
+    MfaSetupRequest,
+    MfaVerifyRequest,
     RegisterAccountRequest,
     UpdateAccountRequest,
-    MfaSetupRequest,
-    MfaEnableRequest,
-    MfaVerifyRequest,
 )
 from src.api.routers.v1.accounts.responses import (
     AccountResponse,
     AuthResponse,
-    TokenResponse,
     MfaSetupResponse,
     SocialAuthUrlResponse,
+    TokenResponse,
 )
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
@@ -234,7 +231,7 @@ async def update_account(
     account_module: BaseAccountModule = Depends(get_account_module),
 ) -> APIResponse:
     result = await account_module.execute(
-        UpdateAccountCommand(account_id=account_id, update_data=request.model_dump(exclude_unset=True))
+        UpdateAccountCommand(account_id=account_id, data=request.model_dump(exclude_unset=True))
     )
     return result.match(
         on_success=lambda dto: APIResponse(
@@ -263,7 +260,7 @@ async def setup_mfa(
 
 @router.post(
     "/mfa/enable",
-    response_model=SuccessResponse[AccountResponse],
+    response_model=SuccessResponse[AuthResponse],
     summary="Enable MFA for account",
 )
 async def enable_mfa(
@@ -309,7 +306,7 @@ async def enable_mfa(
 
 @router.post(
     "/token/mfa",
-    response_model=AuthResponse,
+    response_model=SuccessResponse[AuthResponse],
     summary="Verify TOTP and issue tokens",
 )
 async def login_mfa(
@@ -396,8 +393,10 @@ async def social_callback(
 ) -> APIResponse:
     stored_state = fastapi_request.cookies.get(f"{provider_name}_auth_state")
     if not stored_state or stored_state != state:
-        return APIResponse(
-            message="Invalid OAuth state. Potential CSRF attack.", status_code=status.HTTP_400_BAD_REQUEST
+        raise APIError(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error_code="invalid_oauth_state",
+            message="Invalid OAuth state. Potential CSRF attack.",
         )
 
     response.delete_cookie(f"{provider_name}_auth_state")

@@ -1,9 +1,6 @@
-from typing import Any
-
+from src.accounts.application.interfaces.account_module import BaseAccountModule
 from src.building_blocks.application.mediator import BaseCommand, BaseQuery, Mediator
 from src.building_blocks.domain.result import Result
-
-from src.accounts.application.interfaces.account_module import BaseAccountModule
 
 
 class AccountModule(BaseAccountModule):
@@ -15,12 +12,19 @@ class AccountModule(BaseAccountModule):
     def __init__(self, mediator: Mediator):
         self._mediator = mediator
 
-    @Result.capture
-    async def execute(self, command: BaseCommand[Any]) -> Any:
+    async def execute[TResponse](self, command: BaseCommand[TResponse]) -> Result[TResponse, Exception]:
         """Execute a command through the mediator."""
-        return await self._mediator.execute(command)
+        try:
+            value = await self._mediator.execute(command)
+            return Result.success(value)
+        except Exception as e:
+            return Result.fail(e)
 
-    @Result.capture
-    async def query(self, query: BaseQuery[Any]) -> Any:
+    async def query[TResponse](self, query: BaseQuery[TResponse]) -> Result[TResponse, Exception]:
         """Execute a query through the mediator."""
-        return await self._mediator.query(query)
+        try:
+            value = await self._mediator.query(query)
+            return Result.success(value)
+        except Exception as e:
+            return Result.fail(e)
+

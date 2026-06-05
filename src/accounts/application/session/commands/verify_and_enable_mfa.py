@@ -5,16 +5,15 @@ from typing import override
 import pyotp
 from pydantic import BaseModel
 
-from src.accounts.application.dtos.account import AccountDTO
-from src.accounts.application.dtos.auth import TokenPair
+from src.accounts.application.session.dtos.session import AuthDTO, TokenPair
 from src.accounts.domain.account.account import Account
 from src.accounts.domain.account.value_objects.account_id import AccountId
 from src.accounts.domain.audit.audit_action import AuditAction
-from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
-from src.accounts.domain.interfaces.audit_repository import BaseAuditRepository
-from src.accounts.domain.interfaces.session_repository import BaseSessionRepository
-from src.accounts.domain.services.audit_service import AuditService
-from src.accounts.domain.services.token_service import TokenPayload, TokenService
+from src.accounts.domain.account.repositories.account_repository import BaseAccountRepository
+from src.accounts.domain.audit.repositories.audit_repository import BaseAuditRepository
+from src.accounts.domain.session.repositories.session_repository import BaseSessionRepository
+from src.accounts.domain.audit.services.audit_service import AuditService
+from src.accounts.domain.session.services.token_service import TokenPayload, TokenService
 from src.accounts.domain.session.session import Session
 from src.accounts.domain.session.value_objects.mfa_token import MfaToken
 from src.accounts.domain.session.value_objects.session_id import SessionId
@@ -22,7 +21,7 @@ from src.building_blocks.application.events.base_event_bus import BaseEventBus
 from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 
 
-class VerifyAndEnableMfaCommand(BaseModel, BaseCommand[AccountDTO]):
+class VerifyAndEnableMfaCommand(BaseModel, BaseCommand[AuthDTO]):
     mfa_token: str
     totp_code: str
     secret: str
@@ -31,7 +30,7 @@ class VerifyAndEnableMfaCommand(BaseModel, BaseCommand[AccountDTO]):
     user_agent: str
 
 
-class VerifyAndEnableMfaHandler(BaseCommandHandler[VerifyAndEnableMfaCommand, AccountDTO]):
+class VerifyAndEnableMfaHandler(BaseCommandHandler[VerifyAndEnableMfaCommand, AuthDTO]):
     def __init__(
         self,
         token_service: TokenService,
@@ -77,7 +76,7 @@ class VerifyAndEnableMfaHandler(BaseCommandHandler[VerifyAndEnableMfaCommand, Ac
         )
 
     @override
-    async def handle(self, command: VerifyAndEnableMfaCommand) -> AccountDTO:
+    async def handle(self, command: VerifyAndEnableMfaCommand) -> AuthDTO:
         claims = self._token_service.validate_mfa_token(MfaToken.create(command.mfa_token))
         account = await self._account_repo.get_by_id(AccountId.create(uuid.UUID(claims.sub)))
         if not account:
@@ -107,4 +106,4 @@ class VerifyAndEnableMfaHandler(BaseCommandHandler[VerifyAndEnableMfaCommand, Ac
         tokens = await self._issue_session(
             account, command.ip_address, command.user_agent, action=AuditAction.LOGIN_SUCCESS
         )
-        return AccountDTO(tokens=tokens)
+        return AuthDTO(tokens=tokens)

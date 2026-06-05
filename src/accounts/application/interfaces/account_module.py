@@ -1,8 +1,8 @@
 from abc import abstractmethod
-from typing import Any
 
 from src.building_blocks.application.mediator import BaseCommand, BaseQuery
 from src.building_blocks.application.module import BaseModule
+from src.building_blocks.domain.result import Result
 
 
 class BaseAccountModule(BaseModule):
@@ -11,11 +11,11 @@ class BaseAccountModule(BaseModule):
     """
 
     @abstractmethod
-    async def execute(self, command: BaseCommand[Any]) -> Any:
+    async def execute[TResponse](self, command: BaseCommand[TResponse]) -> Result[TResponse, Exception]:
         """Execute a command through the module."""
         raise NotImplementedError
 
     @abstractmethod
-    async def query(self, query: BaseQuery[Any]) -> Any:
+    async def query[TResponse](self, query: BaseQuery[TResponse]) -> Result[TResponse, Exception]:
         """Execute a query through the module."""
         raise NotImplementedError

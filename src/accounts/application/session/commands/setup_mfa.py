@@ -6,10 +6,10 @@ from pydantic import BaseModel
 
 from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 from src.accounts.domain.account.value_objects.account_id import AccountId
-from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
-from src.accounts.application.dtos.auth import MfaSetup
+from src.accounts.domain.account.repositories.account_repository import BaseAccountRepository
+from src.accounts.application.session.dtos.session import MfaSetup
 from src.accounts.domain.session.value_objects.mfa_token import MfaToken
-from src.accounts.domain.services.token_service import TokenService
+from src.accounts.domain.session.services.token_service import TokenService
 
 
 class SetupMfaCommand(BaseModel, BaseCommand[MfaSetup]):

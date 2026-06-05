@@ -6,7 +6,7 @@ from sqlalchemy.orm import joinedload
 from src.buckets.database.repository import SQLBaseRepository
 from src.building_blocks.infrastructure.persistance.exceptions import RecordNotFoundError
 
-from src.accounts.domain.interfaces.session_repository import BaseSessionRepository
+from src.accounts.domain.session.repositories.session_repository import BaseSessionRepository
 from src.accounts.domain.session.session import Session
 from src.accounts.domain.session.value_objects.account_id import AccountId
 from src.accounts.domain.session.value_objects.refresh_token import RefreshToken

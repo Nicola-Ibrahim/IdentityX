@@ -1,7 +1,7 @@
 from src.buckets.database.repository import SQLBaseRepository
 
 from src.accounts.domain.audit.audit_log import AuditLog
-from src.accounts.domain.interfaces.audit_repository import BaseAuditRepository
+from src.accounts.domain.audit.repositories.audit_repository import BaseAuditRepository
 from src.accounts.infrastructure.persistence.orm.audit_logs import AuditLogTable
 
 

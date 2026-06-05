@@ -2,14 +2,13 @@ from typing import override
 from pydantic import BaseModel
 
 from src.building_blocks.application.events.base_event_bus import BaseEventBus
-from src.accounts.application.dtos.account import AccountDTO
+from src.accounts.application.account.dtos.account import AccountDTO
 from src.accounts.application.interfaces.notification_service import BaseNotificationService
-from src.accounts.domain.services.password_hasher import PasswordHasher
+from src.accounts.domain.account.services.password_hasher import PasswordHasher
 from src.accounts.domain.account.account import Account
 from src.accounts.domain.account.value_objects.email import Email
-from src.accounts.domain.account.value_objects.hashed_password import HashedPassword
 from src.accounts.domain.account.value_objects.password import Password
-from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
+from src.accounts.domain.account.repositories.account_repository import BaseAccountRepository
 from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 
 

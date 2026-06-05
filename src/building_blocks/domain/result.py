@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-from functools import wraps
-from typing import Any, Callable
+from typing import Any, Callable, Self, cast
 
 from pydantic import BaseModel
 
-from src.building_blocks.domain.exceptions import DomainError, DomainException
 
-
-class Result[TResult, TError: DomainException](BaseModel):
+class Result[TResult, TError: Exception](BaseModel):
     """
     Class for encapsulating the outcome of an operation,
     which can either succeed (SuccessResult) or fail (ErrorResult).
@@ -17,15 +14,8 @@ class Result[TResult, TError: DomainException](BaseModel):
     _value: TResult | None = None
     _error: TError | None = None
 
-    def __post_init__(self):
-        # Ensure that Result has either a value or an error, but not both
-        if self._value is not None and self._error is not None:
-            raise ValueError("Result cannot have both value and error.")
-        if self._value is None and self._error is None:
-            raise ValueError("Result must have either value or error.")
-
     @property
-    def is_ok(self) -> bool:
+    def is_success(self) -> bool:
         """Check if the result represents success."""
         return self._error is None
 
@@ -39,14 +29,14 @@ class Result[TResult, TError: DomainException](BaseModel):
         """Get the success value."""
         if self.is_failure:
             raise ValueError("Cannot access value on an error result.")
-        return self._value
+        return cast(TResult, self._value)
 
     @property
     def error(self) -> TError:
         """Get the error."""
-        if self.is_ok:
+        if self.is_success:
             raise ValueError("Cannot access error on a success result.")
-        return self._error
+        return cast(TError, self._error)
 
     def match(self, on_success: Callable[[TResult], Any], on_failure: Callable[[TError], Any]) -> Any:
         """
@@ -59,12 +49,12 @@ class Result[TResult, TError: DomainException](BaseModel):
         Returns:
             Any: The return value of the called function.
         """
-        if self.is_ok:
+        if self.is_success:
             return on_success(self.value)
         return on_failure(self.error)
 
     @classmethod
-    def ok(cls, value: TResult) -> Result[TResult, TError]:
+    def success(cls, value: TResult) -> Self:
         """
         Factory method for creating a success result.
 
@@ -72,14 +62,14 @@ class Result[TResult, TError: DomainException](BaseModel):
             value (TResult): The value representing success.
 
         Returns:
-            Result[TResult, TError]: A successful result.
+            Self: A successful result.
         """
         instance = cls.model_construct()
         object.__setattr__(instance, "_value", value)
         return instance
 
     @classmethod
-    def fail(cls, error: TError) -> Result[TResult, TError]:
+    def fail(cls, error: TError) -> Self:
         """
         Factory method for creating an error result.
 
@@ -87,27 +77,8 @@ class Result[TResult, TError: DomainException](BaseModel):
             error (TError): The error representing failure.
 
         Returns:
-            Result[TResult, TError]: An error result.
+            Self: An error result.
         """
         instance = cls.model_construct()
         object.__setattr__(instance, "_error", error)
         return instance
-
-    @staticmethod
-    def capture(func: Callable) -> Callable:
-        """Wraps a service method to return a Result object."""
-
-        @wraps(func)
-        async def wrapper(*args, **kwargs) -> Result:
-            try:
-                # Execute the pure service logic
-                value = await func(*args, **kwargs)
-                return Result.ok(value)
-            except DomainError as e:
-                # Catch known domain errors
-                return Result.fail(e)
-            except Exception as e:
-                # Catch unexpected infrastructure errors
-                return Result.fail(DomainError(message=str(e)))
-
-        return wrapper

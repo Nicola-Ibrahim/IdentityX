@@ -1,8 +1,8 @@
 from typing import override
 from pydantic import BaseModel
 
-from src.accounts.domain.services.token_service import TokenService
-from src.accounts.domain.interfaces.session_repository import BaseSessionRepository
+from src.accounts.domain.session.services.token_service import TokenService
+from src.accounts.domain.session.repositories.session_repository import BaseSessionRepository
 from src.accounts.domain.session.token_errors import TokenRevokedException
 from src.accounts.domain.session.value_objects.access_token import AccessToken
 from src.accounts.domain.session.value_objects.session_id import SessionId

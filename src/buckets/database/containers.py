@@ -1,25 +1,21 @@
-from dependency_injector import containers, providers
+from lagom import Container
 
 from src.buckets.database.config import SQLAlchemySettings
 from src.buckets.database.session import SQLAlchemySessionFactory
 
 
-class DatabaseContainer(containers.DeclarativeContainer):
-    """Container for database-related infrastructure."""
+async def configure_db_dependencies(container: Container) -> None:
+    """Initialize database session factory and register it to the global Container."""
+    settings = SQLAlchemySettings()
+    factory = SQLAlchemySessionFactory(settings)
+    # Explicit connection check (Fail-Fast)
+    if not await factory.ping():
+        raise RuntimeError(f"Could not connect to Database at {settings.url}")
 
-    settings = providers.Singleton(SQLAlchemySettings)
+    container[SQLAlchemySettings] = settings
+    container[SQLAlchemySessionFactory] = factory
 
-    @staticmethod
-    async def _init_session_factory(settings: SQLAlchemySettings):
-        factory = SQLAlchemySessionFactory(settings)
-        # Explicit connection check (Fail-Fast)
-        if not await factory.ping():
-            raise RuntimeError(f"Could not connect to Database at {settings.url}")
 
-        yield factory
-        await factory.dispose()
-
-    session_factory = providers.Resource(
-        _init_session_factory,
-        settings=settings,
-    )
+async def shutdown_database(factory: SQLAlchemySessionFactory) -> None:
+    """Shutdown database and dispose connections."""
+    await factory.dispose()

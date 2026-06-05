@@ -1,69 +1,57 @@
 from typing import Self
 
-from src.accounts.infrastructure.configuration.startup import AccountsStartUp
-from src.api.core.config import get_settings
-from src.buckets.database import DatabaseContainer
-from src.buckets.redis import RedisContainer
+from lagom import Container
+from redis.asyncio import Redis
+
+from src.accounts.application.interfaces.account_module import BaseAccountModule
+from src.accounts.infrastructure.configuration.containers import configure_accounts_dependencies
+from src.buckets.database import (
+    SQLAlchemySessionFactory,
+    configure_db_dependencies,
+    shutdown_database,
+)
+from src.buckets.redis import configure_redis_dependencies, shutdown_redis
 
 
 class IdentityXStartUp:
     """
     The Composition Root. Orchestrates the initialization and teardown
-    of all system modules and shared infrastructure.
+    of all system modules and shared infrastructure using a single global Container.
     """
 
     def __init__(self) -> None:
-        self._settings = get_settings()
-        self._db_container = DatabaseContainer()
-        self._redis_container = RedisContainer()
-
-        # This handles the AccountsDIContainer internally
-        self._accounts = AccountsStartUp()
-
-        # List of all modules for easier iteration during init/stop
-        self._modules = [self._accounts]
+        self.container = Container()
 
     @property
-    def accounts(self) -> AccountsStartUp:
-        return self._accounts
+    def accounts(self) -> BaseAccountModule:
+        """Return the Accounts module facade."""
+        return self.container[BaseAccountModule]
 
     @property
-    def redis_container(self) -> RedisContainer:
-        return self._redis_container
-
-    @property
-    def session_factory(self):
-        return self._db_container.session_factory()
+    def session_factory(self) -> SQLAlchemySessionFactory:
+        """Return the database session factory."""
+        return self.container[SQLAlchemySessionFactory]
 
     async def initialize(self) -> Self:
         """Initialize all modules and shared infrastructure."""
 
         # 1. Initialize shared infrastructure resources
-        db_res = self._db_container.init_resources()
-        if db_res:
-            await db_res
+        await configure_db_dependencies(self.container)
 
-        redis_res = self._redis_container.init_resources()
-        if redis_res:
-            await redis_res
+        await configure_redis_dependencies(self.container)
 
-        # 2. Initialize all modules
-        for module in self._modules:
-            module.initialize(database=self._db_container.session_factory)
+        # 2. Initialize modules
+        await configure_accounts_dependencies(self.container)
 
         return self
 
     async def stop(self) -> None:
-        """Stop all modules and clean up resources in reverse order."""
-        for module in reversed(self._modules):
-            await module.stop()
+        """Stop all modules and clean up resources."""
 
         # Shutdown Redis infrastructure
-        redis_res = self._redis_container.shutdown_resources()
-        if redis_res:
-            await redis_res
+        redis_client = self.container[Redis]
+        await shutdown_redis(redis_client)
 
         # Shutdown shared database infrastructure
-        db_res = self._db_container.shutdown_resources()
-        if db_res:
-            await db_res
+        session_factory = self.container[SQLAlchemySessionFactory]
+        await shutdown_database(session_factory)

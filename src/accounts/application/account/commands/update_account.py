@@ -7,8 +7,8 @@ from src.building_blocks.application.events.base_event_bus import BaseEventBus
 from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 from src.accounts.domain.account.value_objects.account_id import AccountId
 from src.accounts.domain.account.value_objects.email import Email
-from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
-from src.accounts.application.dtos.account import AccountDTO
+from src.accounts.domain.account.repositories.account_repository import BaseAccountRepository
+from src.accounts.application.account.dtos.account import AccountDTO
 
 
 class UpdateAccountCommand(BaseModel, BaseCommand[AccountDTO]):

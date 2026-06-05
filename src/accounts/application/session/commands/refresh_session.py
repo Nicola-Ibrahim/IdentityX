@@ -5,16 +5,16 @@ from pydantic import BaseModel
 
 from src.building_blocks.application.events.base_event_bus import BaseEventBus
 from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
-from src.accounts.application.commands.helpers import issue_session
+from src.accounts.application.session.commands.helpers import issue_session
 from src.accounts.domain.account.value_objects.account_id import AccountId
 from src.accounts.domain.audit.audit_action import AuditAction
-from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
-from src.accounts.domain.interfaces.audit_repository import BaseAuditRepository
-from src.accounts.domain.interfaces.session_repository import BaseSessionRepository
-from src.accounts.domain.services.audit_service import AuditService
+from src.accounts.domain.account.repositories.account_repository import BaseAccountRepository
+from src.accounts.domain.audit.repositories.audit_repository import BaseAuditRepository
+from src.accounts.domain.session.repositories.session_repository import BaseSessionRepository
+from src.accounts.domain.audit.services.audit_service import AuditService
 from src.accounts.domain.session.value_objects.refresh_token import RefreshToken
-from src.accounts.application.dtos.auth import TokenPair
-from src.accounts.domain.services.token_service import TokenService
+from src.accounts.application.session.dtos.session import TokenPair
+from src.accounts.domain.session.services.token_service import TokenService
 
 
 class RefreshSessionCommand(BaseModel, BaseCommand[TokenPair]):

@@ -17,7 +17,7 @@ from src.accounts.domain.account.value_objects.mfa_settings import MfaSettings
 from src.accounts.domain.account.value_objects.session_id import SessionId
 from src.accounts.domain.account.value_objects.status import Status
 from src.accounts.domain.account.value_objects.trusted_device import TrustedDevice
-from src.accounts.domain.interfaces.account_repository import BaseAccountRepository
+from src.accounts.domain.account.repositories.account_repository import BaseAccountRepository
 from src.accounts.infrastructure.persistence.orm.models import AccountTable, ExternalIdentityTable, TrustedDeviceTable
 
 
