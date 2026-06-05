@@ -54,6 +54,13 @@ class Settings(BaseSettings):
         ["*"], description="Allowed CORS headers", examples=[["*"], ["Content-Type", "Authorization"]]
     )
 
+    # --- OPA Auth ---
+    OPA_URL: str = Field(
+        "http://localhost:8181/v1/data/identityx/authz/allow",
+        description="OPA decision engine URL",
+        examples=["http://localhost:8181/v1/data/identityx/authz/allow"],
+    )
+
     # --- Logging ---
     LOGGER_NAME: str = Field("identityx", description="Main logger name", examples=["identityx"])
     LOG_LEVEL: str = Field("INFO", description="Global log level", examples=["INFO", "DEBUG", "ERROR"])

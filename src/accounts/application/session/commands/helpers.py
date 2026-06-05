@@ -27,7 +27,13 @@ async def issue_session(
     session_ttl = session_ttl or timedelta(hours=12)
     expires_at = datetime.now(timezone.utc) + session_ttl
 
-    access, refresh = token_service.create_tokens(TokenPayload(sub=str(account.id.value), sid=str(session_id.value)))
+    access, refresh = token_service.create_tokens(
+        TokenPayload(
+            sub=str(account.id.value),
+            sid=str(session_id.value),
+            roles=list(r.value for r in account.roles),
+        )
+    )
 
     session = Session.issue(
         account_id=account.id,

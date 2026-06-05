@@ -54,7 +54,11 @@ class VerifyAndEnableMfaHandler(BaseCommandHandler[VerifyAndEnableMfaCommand, Au
         expires_at = datetime.now(timezone.utc) + timedelta(hours=12)
 
         access, refresh = self._token_service.create_tokens(
-            TokenPayload(sub=str(account.id.value), sid=str(session_id.value))
+            TokenPayload(
+                sub=str(account.id.value),
+                sid=str(session_id.value),
+                roles=list(r.value for r in account.roles),
+            )
         )
 
         session = Session.issue(

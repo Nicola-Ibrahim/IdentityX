@@ -19,6 +19,7 @@ class TokenPayload(BaseModel):
 
     sub: str = Field(..., description="Subject (account_id)")
     sid: str | None = Field(None, description="Session ID")
+    roles: list[str] | None = Field(None, description="Account roles")
 
 
 class ValidatedClaims(BaseModel):
@@ -31,6 +32,7 @@ class ValidatedClaims(BaseModel):
     iat: int = Field(..., description="Issued at timestamp (Unix)")
     typ: str = Field(..., description="Token type: 'access' or 'refresh'")
     iss: str | None = Field(None, description="Issuer identifier")
+    roles: list[str] | None = Field(None, description="Account roles")
 
     @property
     def exp_datetime(self) -> datetime:

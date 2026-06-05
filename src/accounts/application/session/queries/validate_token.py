@@ -1,4 +1,4 @@
-from typing import override
+from typing import Any, override
 from pydantic import BaseModel
 
 from src.accounts.domain.session.services.token_service import TokenService
@@ -9,17 +9,17 @@ from src.accounts.domain.session.value_objects.session_id import SessionId
 from src.building_blocks.application.mediator import BaseQuery, BaseQueryHandler
 
 
-class ValidateTokenQuery(BaseModel, BaseQuery[str]):
+class ValidateTokenQuery(BaseModel, BaseQuery[dict[str, Any]]):
     token: str
 
 
-class ValidateTokenHandler(BaseQueryHandler[ValidateTokenQuery, str]):
+class ValidateTokenHandler(BaseQueryHandler[ValidateTokenQuery, dict[str, Any]]):
     def __init__(self, token_service: TokenService, session_repo: BaseSessionRepository):
         self._token_service = token_service
         self._session_repo = session_repo
 
     @override
-    async def handle(self, query: ValidateTokenQuery) -> str:
+    async def handle(self, query: ValidateTokenQuery) -> dict[str, Any]:
         # 1. Cryptographic Check (JWT Signature & Expiration)
         token_vo = AccessToken.create(query.token)
         claims = self._token_service.validate_access_token(token_vo)
@@ -34,4 +34,8 @@ class ValidateTokenHandler(BaseQueryHandler[ValidateTokenQuery, str]):
             if not session or session.is_revoked:
                 raise TokenRevokedException("Session has been revoked")
 
-        return claims.sub
+        return {
+            "sub": claims.sub,
+            "roles": claims.roles or [],
+            "sid": claims.sid,
+        }

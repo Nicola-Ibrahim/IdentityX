@@ -9,7 +9,7 @@ from src.accounts.application.account.queries.get_account_by_id import GetAccoun
 from src.accounts.application.account.queries.list_accounts import ListAccountsQuery
 from src.api.core.exceptions import raise_http
 from src.api.core.responses import APIResponse, SuccessResponse
-from src.api.core.security.dependencies import get_account_module, get_current_account_id
+from src.api.core.security.dependencies import get_account_module, check_opa_policy
 from src.api.core.utils.pagination import PaginationParams, get_pagination
 
 from src.api.routers.v1.accounts.responses import AccountResponse
@@ -17,7 +17,7 @@ from src.api.routers.v1.accounts.responses import AccountResponse
 router = APIRouter(
     prefix="/admin",
     tags=["admin"],
-    dependencies=[Depends(get_current_account_id)],
+    dependencies=[Depends(check_opa_policy)],
 )
 
 
