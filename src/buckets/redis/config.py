@@ -12,7 +12,7 @@ class RedisSettings(BaseSettings):
     )
 
     REDIS_URL: RedisDsn = Field(
-        default="redis://localhost:6379/0", description="Redis URL for rate limiting, caching, and background tasks"
+        default=RedisDsn("redis://localhost:6379/0"), description="Redis URL for rate limiting, caching, and background tasks"
     )
 
     REDIS_MAX_CONNECTIONS: int = Field(default=10, description="Maximum number of connections in the pool")

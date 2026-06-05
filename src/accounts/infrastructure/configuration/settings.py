@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import Field, HttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -34,11 +34,11 @@ class AccountsSettings(BaseSettings):
     # Google OAuth2
     GOOGLE_CLIENT_ID: str = Field(..., description="Google OAuth2 Client ID")
     GOOGLE_CLIENT_SECRET: str = Field(..., description="Google OAuth2 Client Secret")
-    GOOGLE_REDIRECT_URI: str = Field(..., description="Google OAuth2 Redirect URI")
-    GOOGLE_AUTH_URL: str = Field(
+    GOOGLE_REDIRECT_URI: HttpUrl = Field(..., description="Google OAuth2 Redirect URI")
+    GOOGLE_AUTH_URL: HttpUrl = Field(
         ..., description="Google OAuth2 Authorization URL", examples=["https://accounts.google.com/o/oauth2/v2/auth"]
     )
-    GOOGLE_METADATA_URL: str = Field(
+    GOOGLE_METADATA_URL: HttpUrl = Field(
         ...,
         description="Google OAuth2 Metadata URL",
         examples=["https://accounts.google.com/.well-known/openid-configuration"],

@@ -14,7 +14,7 @@ class Settings(BaseSettings):
 
     # Pydantic v2-style config
     model_config = SettingsConfigDict(
-        env_prefix="BACKEND_",
+        env_prefix="API_",
         case_sensitive=True,
         extra="ignore",
         env_ignore_empty=True,
@@ -55,8 +55,8 @@ class Settings(BaseSettings):
     )
 
     # --- OPA Auth ---
-    OPA_URL: str = Field(
-        "http://localhost:8181/v1/data/identityx/authz/allow",
+    OPA_URL: AnyHttpUrl = Field(
+        default=AnyHttpUrl("http://localhost:8181/v1/data/identityx/authz/allow"),
         description="OPA decision engine URL",
         examples=["http://localhost:8181/v1/data/identityx/authz/allow"],
     )

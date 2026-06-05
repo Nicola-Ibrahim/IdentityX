@@ -14,7 +14,7 @@ class SQLAlchemySessionFactory:
 
     def __init__(self, config: SQLAlchemySettings) -> None:
         self._engine = create_async_engine(
-            config.url,
+            str(config.url),
             pool_pre_ping=config.pool_pre_ping,
             echo=config.echo,
             pool_size=config.pool_size,

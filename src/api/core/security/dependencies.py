@@ -82,7 +82,7 @@ async def check_opa_policy(
     settings = get_settings()
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(settings.OPA_URL, json=opa_input, timeout=2.0)
+            response = await client.post(str(settings.OPA_URL), json=opa_input, timeout=2.0)
             response.raise_for_status()
             decision = response.json().get("result", False)
         except Exception as exc:

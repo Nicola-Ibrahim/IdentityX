@@ -54,9 +54,9 @@ async def configure_accounts_dependencies(container: Container) -> None:
     google_provider = GoogleAuthenticationProvider(
         client_id=settings.GOOGLE_CLIENT_ID,
         client_secret=settings.GOOGLE_CLIENT_SECRET,
-        redirect_uri=settings.GOOGLE_REDIRECT_URI,
-        auth_url=settings.GOOGLE_AUTH_URL,
-        server_metadata_url=settings.GOOGLE_METADATA_URL,
+        redirect_uri=str(settings.GOOGLE_REDIRECT_URI),
+        auth_url=str(settings.GOOGLE_AUTH_URL),
+        server_metadata_url=str(settings.GOOGLE_METADATA_URL),
     )
     container[SocialProviders] = SocialProviders(providers={"google": google_provider})
 
