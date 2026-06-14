@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 import pyotp
 from pydantic import BaseModel
 
-from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from src.shared.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 from src.accounts.domain.account.account import Account
 from src.accounts.domain.account.value_objects.account_id import AccountId
 from src.accounts.domain.audit.audit_action import AuditAction
@@ -17,7 +17,7 @@ from src.accounts.domain.audit.services.audit_service import AuditService
 from src.accounts.domain.session.session import Session
 from src.accounts.domain.session.value_objects.session_id import SessionId
 from src.accounts.domain.session.value_objects.mfa_token import MfaToken
-from src.building_blocks.application.events.base_event_bus import BaseEventBus
+from src.shared.building_blocks.application.events.base_event_bus import BaseEventBus
 from src.accounts.application.session.dtos.session import AuthDTO, TokenPair
 from src.accounts.domain.session.services.token_service import TokenPayload, TokenService
 

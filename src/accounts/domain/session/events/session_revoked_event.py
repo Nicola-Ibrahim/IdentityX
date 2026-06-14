@@ -1,6 +1,6 @@
 """Event emitted when a session is revoked."""
 
-from src.building_blocks.domain.events import DomainEvent
+from src.shared.building_blocks.domain.events import DomainEvent
 
 
 class SessionRevokedEvent(DomainEvent):

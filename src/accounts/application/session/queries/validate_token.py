@@ -6,7 +6,7 @@ from src.accounts.domain.session.repositories.session_repository import BaseSess
 from src.accounts.domain.session.token_errors import TokenRevokedException
 from src.accounts.domain.session.value_objects.access_token import AccessToken
 from src.accounts.domain.session.value_objects.session_id import SessionId
-from src.building_blocks.application.mediator import BaseQuery, BaseQueryHandler
+from src.shared.building_blocks.application.mediator import BaseQuery, BaseQueryHandler
 
 
 class ValidateTokenQuery(BaseModel, BaseQuery[dict[str, Any]]):

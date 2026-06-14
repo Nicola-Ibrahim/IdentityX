@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import Self
 from pydantic import Field
 
-from src.building_blocks.domain.value_object import ValueObject
+from src.shared.building_blocks.domain.value_object import ValueObject
 from src.accounts.domain.account.rules.device_hash_must_be_valid_sha256_rule import DeviceHashMustBeValidSha256Rule
 from src.accounts.domain.account.rules.device_trust_expiration_must_be_future_rule import DeviceTrustExpirationMustBeFutureRule
 from src.accounts.domain.account.rules.ip_address_must_be_valid_rule import IpAddressMustBeValidRule

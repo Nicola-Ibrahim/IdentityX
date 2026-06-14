@@ -1,4 +1,4 @@
-from src.building_blocks.domain.rule import BaseBusinessRule
+from src.shared.building_blocks.domain.rule import BaseBusinessRule
 
 
 class UserAgentMustBeValidRule(BaseBusinessRule):

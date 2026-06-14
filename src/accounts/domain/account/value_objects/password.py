@@ -1,6 +1,6 @@
 from typing import Self
 
-from src.building_blocks.domain.value_object import ValueObject
+from src.shared.building_blocks.domain.value_object import ValueObject
 
 from src.accounts.domain.account.rules.password_must_meet_policy_rule import PasswordMustMeetPolicyRule
 

@@ -1,6 +1,6 @@
 """Event emitted when a session naturally expires."""
 
-from src.building_blocks.domain.events import DomainEvent
+from src.shared.building_blocks.domain.events import DomainEvent
 
 
 class SessionExpiredEvent(DomainEvent):

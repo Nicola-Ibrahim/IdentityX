@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from pydantic import Field
 
-from src.building_blocks.domain.aggregate_root import AggregateRoot
+from src.shared.building_blocks.domain.aggregate_root import AggregateRoot
 from src.accounts.domain.session.rules.session_expiration_must_be_future_rule import SessionExpirationMustBeFutureRule
 from src.accounts.domain.session.rules.session_cannot_be_revoked_if_already_inactive_rule import SessionCannotBeRevokedIfAlreadyInactiveRule
 from src.accounts.domain.session.value_objects.account_id import AccountId

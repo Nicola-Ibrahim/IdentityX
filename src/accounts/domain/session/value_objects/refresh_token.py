@@ -1,6 +1,6 @@
 from typing import Self
 
-from src.building_blocks.domain.value_object import ValueObject
+from src.shared.building_blocks.domain.value_object import ValueObject
 
 from src.accounts.domain.session.rules.refresh_token_must_be_secure_rule import RefreshTokenMustBeSecureRule
 

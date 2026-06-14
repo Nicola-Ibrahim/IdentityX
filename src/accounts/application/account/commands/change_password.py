@@ -3,8 +3,8 @@ import uuid
 
 from pydantic import BaseModel
 
-from src.building_blocks.application.events.base_event_bus import BaseEventBus
-from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from src.shared.building_blocks.application.events.base_event_bus import BaseEventBus
+from src.shared.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 from src.accounts.application.account.dtos.account import AccountDTO
 from src.accounts.domain.account.value_objects.account_id import AccountId
 from src.accounts.domain.account.value_objects.password import Password

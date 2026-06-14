@@ -1,7 +1,7 @@
 from typing import Self
 from pydantic import Field
 
-from src.building_blocks.domain.value_object import ValueObject
+from src.shared.building_blocks.domain.value_object import ValueObject
 from src.accounts.domain.account.rules.enabled_mfa_must_have_secret_and_recovery_codes_rule import EnabledMfaMustHaveSecretAndRecoveryCodesRule
 from src.accounts.domain.account.rules.mfa_secret_must_be_valid_rule import MfaSecretMustBeValidRule
 from src.accounts.domain.account.rules.recovery_code_must_be_valid_rule import RecoveryCodeMustBeValidRule

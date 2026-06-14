@@ -2,6 +2,8 @@ from typing import Any
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 import httpx
+from lagom import Container
+from lagom.integrations.fast_api import FastApiIntegration
 
 from src.accounts.application.interfaces.account_module import BaseAccountModule
 from src.accounts.application.session.queries.validate_token import ValidateTokenQuery
@@ -11,9 +13,16 @@ from src.api.core.config import get_settings
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/accounts/token")
 
 
-async def get_account_module(request: Request) -> BaseAccountModule:
-    """Dependency to get the AccountModule from app state."""
-    return request.app.state.account_module
+# Initialize a base container and official FastAPI integration helper
+container = Container()
+deps = FastApiIntegration(container)
+
+
+async def get_account_module(
+    module: BaseAccountModule = deps.depends(BaseAccountModule),
+) -> BaseAccountModule:
+    """Dependency to get the AccountModule resolved from the global container."""
+    return module
 
 
 async def get_current_token_claims(
@@ -72,9 +81,7 @@ async def check_opa_policy(
                 "path": request.url.path.strip("/").split("/"),
                 "account_id": request.path_params.get("account_id"),
             },
-            "context": {
-                "ip_address": request.client.host if request.client else "unknown"
-            }
+            "context": {"ip_address": request.client.host if request.client else "unknown"},
         }
     }
 
@@ -88,13 +95,9 @@ async def check_opa_policy(
         except Exception as exc:
             # Fail-closed if the policy server is unreachable
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Authorization policy check failed"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Authorization policy check failed"
             ) from exc
 
     # 4. Enforce decision
     if not decision:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Forbidden: insufficient permissions"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden: insufficient permissions")

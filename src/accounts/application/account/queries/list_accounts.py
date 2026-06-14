@@ -2,8 +2,8 @@ from typing import override
 from pydantic import BaseModel
 
 from src.accounts.application.account.dtos.account import AccountDTO
-from src.accounts.domain.account.repositories.account_repository import BaseAccountRepository
-from src.building_blocks.application.mediator import BaseQuery, BaseQueryHandler
+from src.accounts.application.account.queries.list_accounts_query_service import ListAccountsQueryService
+from src.shared.building_blocks.application.mediator import BaseQuery, BaseQueryHandler
 
 
 class ListAccountsQuery(BaseModel, BaseQuery[tuple[AccountDTO, ...]]):
@@ -12,20 +12,9 @@ class ListAccountsQuery(BaseModel, BaseQuery[tuple[AccountDTO, ...]]):
 
 
 class ListAccountsHandler(BaseQueryHandler[ListAccountsQuery, tuple[AccountDTO, ...]]):
-    def __init__(self, account_repo: BaseAccountRepository):
-        self._account_repo = account_repo
+    def __init__(self, query_service: ListAccountsQueryService):
+        self._query_service = query_service
 
     @override
     async def handle(self, query: ListAccountsQuery) -> tuple[AccountDTO, ...]:
-        records = await self._account_repo.list_accounts(limit=query.limit, offset=query.offset)
-        accounts = [
-            AccountDTO(
-                id=str(record.id),
-                email=record.email,
-                is_verified=record.is_verified,
-                is_active=record.is_active,
-                roles=tuple(r.role for r in record.roles) if hasattr(record, "roles") else (),
-            )
-            for record in records
-        ]
-        return tuple(accounts)
+        return await self._query_service.list_accounts(limit=query.limit, offset=query.offset)

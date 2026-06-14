@@ -1,5 +1,5 @@
 from datetime import datetime
-from src.building_blocks.domain.events import DomainEvent
+from src.shared.building_blocks.domain.events import DomainEvent
 
 
 class SessionIssuedEvent(DomainEvent):

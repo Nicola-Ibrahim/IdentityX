@@ -1,6 +1,6 @@
 from src.accounts.application.interfaces.account_module import BaseAccountModule
-from src.building_blocks.application.mediator import BaseCommand, BaseQuery, Mediator
-from src.building_blocks.domain.result import Result
+from src.shared.building_blocks.application.mediator import BaseCommand, BaseQuery, Mediator
+from src.shared.building_blocks.domain.result import Result
 
 
 class AccountModule(BaseAccountModule):

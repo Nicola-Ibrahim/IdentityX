@@ -1,8 +1,8 @@
 from typing import override
 from pydantic import BaseModel
 
-from src.building_blocks.application.events.base_event_bus import BaseEventBus
-from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from src.shared.building_blocks.application.events.base_event_bus import BaseEventBus
+from src.shared.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 from src.accounts.domain.account.account import Account
 from src.accounts.domain.account.value_objects.email import Email
 from src.accounts.domain.account.value_objects.external_identity import ExternalIdentity

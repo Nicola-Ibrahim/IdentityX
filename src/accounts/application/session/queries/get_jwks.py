@@ -2,7 +2,7 @@ from typing import override
 from pydantic import BaseModel
 
 from src.accounts.domain.session.services.token_service import TokenService
-from src.building_blocks.application.mediator import BaseQuery, BaseQueryHandler
+from src.shared.building_blocks.application.mediator import BaseQuery, BaseQueryHandler
 
 
 class GetJwksQuery(BaseModel, BaseQuery[dict]):

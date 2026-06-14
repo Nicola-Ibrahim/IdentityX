@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from pydantic import Field
 
-from src.building_blocks.domain.aggregate_root import AggregateRoot
+from src.shared.building_blocks.domain.aggregate_root import AggregateRoot
 from src.accounts.domain.account.enums.account_role import AccountRole
 from src.accounts.domain.account.value_objects.account_id import AccountId
 from src.accounts.domain.account.value_objects.email import Email

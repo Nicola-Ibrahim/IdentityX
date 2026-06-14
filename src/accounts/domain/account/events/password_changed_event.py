@@ -1,6 +1,6 @@
 """Domain event emitted when an account updates its password."""
 
-from src.building_blocks.domain.events import DomainEvent
+from src.shared.building_blocks.domain.events import DomainEvent
 
 
 class PasswordChangedEvent(DomainEvent):

@@ -1,6 +1,6 @@
 """Domain event emitted when a new device is trusted."""
 
-from src.building_blocks.domain.events import DomainEvent
+from src.shared.building_blocks.domain.events import DomainEvent
 
 
 class DeviceTrustedEvent(DomainEvent):

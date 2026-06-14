@@ -1,6 +1,6 @@
 import re
 
-from src.building_blocks.domain.rule import BaseBusinessRule
+from src.shared.building_blocks.domain.rule import BaseBusinessRule
 
 _EMAIL_REGEX = re.compile(r"^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,}$")
 

@@ -1,8 +1,9 @@
-from src.buckets.database.repository import SQLBaseRepository
+from src.shared.infrastructure.database.repository import SQLBaseRepository
 
 from src.accounts.domain.audit.audit_log import AuditLog
 from src.accounts.domain.audit.repositories.audit_repository import BaseAuditRepository
-from src.accounts.infrastructure.persistence.orm.audit_logs import AuditLogTable
+from src.accounts.infrastructure.persistence.tables.audit_logs import AuditLogTable
+from src.accounts.infrastructure.persistence.mappers.audit_mapper import AuditMapper
 
 
 class SQLAuditLogRepository(SQLBaseRepository[AuditLogTable], BaseAuditRepository):
@@ -17,14 +18,5 @@ class SQLAuditLogRepository(SQLBaseRepository[AuditLogTable], BaseAuditRepositor
         """
         Persist a new audit log entry.
         """
-        record = AuditLogTable(
-            id=audit_log.id.value,
-            account_id=str(audit_log.account_id.value) if audit_log.account_id else None,
-            action=audit_log.action.value,
-            ip_address=audit_log.ip_address,
-            user_agent=audit_log.user_agent,
-            details=audit_log.details,
-            created_at=audit_log.created_at,
-            updated_at=audit_log.updated_at,
-        )
+        record = AuditMapper.to_record(audit_log)
         self.session.add(record)

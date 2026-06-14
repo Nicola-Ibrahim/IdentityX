@@ -1,6 +1,6 @@
 """Domain event emitted when an account is suspended."""
 
-from src.building_blocks.domain.events import DomainEvent
+from src.shared.building_blocks.domain.events import DomainEvent
 
 
 class AccountSuspendedEvent(DomainEvent):

@@ -1,6 +1,6 @@
 """Domain event emitted when a new account is registered."""
 
-from src.building_blocks.domain.events import DomainEvent
+from src.shared.building_blocks.domain.events import DomainEvent
 
 
 class AccountRegisteredEvent(DomainEvent):

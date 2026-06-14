@@ -1,6 +1,6 @@
 from typing import Self
 
-from src.building_blocks.domain.value_object import ValueObject
+from src.shared.building_blocks.domain.value_object import ValueObject
 from src.accounts.domain.account.rules.hashed_password_must_be_set_rule import HashedPasswordMustBeSetRule
 from src.accounts.domain.account.rules.hashed_password_must_be_argon2_format_rule import HashedPasswordMustBeArgon2FormatRule
 

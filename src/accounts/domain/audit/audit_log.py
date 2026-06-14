@@ -1,5 +1,5 @@
 from typing import Any
-from src.building_blocks.domain.entity import Entity
+from src.shared.building_blocks.domain.entity import Entity
 from src.accounts.domain.audit.audit_action import AuditAction
 from src.accounts.domain.audit.value_objects.audit_log_id import AuditLogId
 from src.accounts.domain.account.value_objects.account_id import AccountId

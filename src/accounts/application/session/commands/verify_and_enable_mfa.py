@@ -17,8 +17,8 @@ from src.accounts.domain.session.services.token_service import TokenPayload, Tok
 from src.accounts.domain.session.session import Session
 from src.accounts.domain.session.value_objects.mfa_token import MfaToken
 from src.accounts.domain.session.value_objects.session_id import SessionId
-from src.building_blocks.application.events.base_event_bus import BaseEventBus
-from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from src.shared.building_blocks.application.events.base_event_bus import BaseEventBus
+from src.shared.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 
 
 class VerifyAndEnableMfaCommand(BaseModel, BaseCommand[AuthDTO]):

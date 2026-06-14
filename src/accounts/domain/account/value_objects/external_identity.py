@@ -1,6 +1,6 @@
 from pydantic import Field
 
-from src.building_blocks.domain.value_object import ValueObject
+from src.shared.building_blocks.domain.value_object import ValueObject
 
 
 class ExternalIdentity(ValueObject):

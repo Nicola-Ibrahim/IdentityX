@@ -7,7 +7,7 @@ from src.accounts.application.session.dtos.session import TokenPair
 from src.accounts.domain.session.services.token_service import TokenPayload
 
 
-from src.building_blocks.application.events.base_event_bus import BaseEventBus
+from src.shared.building_blocks.application.events.base_event_bus import BaseEventBus
 
 
 async def issue_session(

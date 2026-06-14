@@ -4,8 +4,8 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from lagom import Container
 
-from src.startup import IdentityXStartUp
 from src.api.core import middleware
 from src.api.core.config import get_settings
 from src.api.core.exceptions import (
@@ -15,7 +15,9 @@ from src.api.core.exceptions import (
     system_exception_handler,
     validation_exception_handler,
 )
+from src.api.core.security.dependencies import deps
 from src.api.core.utils.routing_helpers import collect_routers
+from src.application import bootstrap_application
 
 
 class APIFactory:
@@ -26,32 +28,28 @@ class APIFactory:
 
     def create_app(self) -> FastAPI:
         self.settings.configure()
-        startup = IdentityXStartUp()
 
         @asynccontextmanager
         async def lifespan(app: FastAPI):
-            try:
-                await startup.initialize()
-
-                app.state.startup = startup
-                # Keep compatibility with current app.state.backend_modules if needed
-                app.state.backend_modules = {"accounts": startup.accounts}
-                app.state.account_module = startup.accounts
-                app.state.session_factory = startup.session_factory
+            # Startup: Initialize composition root resources
+            async with bootstrap_application() as container:
+                # Bind the initialized container to the FastAPI integration helper
+                deps._container = container
                 yield
-            finally:
-                await startup.stop()
+            # Shutdown: Resources are disposed. Reset to a fresh container for garbage collection & test isolation.
+            deps._container = Container()
 
-        self.app = FastAPI(
+        app = FastAPI(
             title=self.settings.PROJECT_NAME,
             version=self.settings.VERSION,
             description=self.settings.DESCRIPTION,
             lifespan=lifespan,
         )
 
-        self._configure_middleware()
-        self._register_exception_handlers()
-        self._register_routers()
+        self._configure_middleware(app)
+        self._register_exception_handlers(app)
+        self._register_routers(app)
+        self.app = app
         return self.app
 
     def run(self, **uvicorn_kwargs):
@@ -67,10 +65,10 @@ class APIFactory:
             **uvicorn_kwargs,
         )
 
-    def _configure_middleware(self):
-        self.app.add_middleware(middleware.SecurityHeadersMiddleware)
+    def _configure_middleware(self, app: FastAPI):
+        app.add_middleware(middleware.SecurityHeadersMiddleware)
         if self.settings.CORS_ENABLED:
-            self.app.add_middleware(
+            app.add_middleware(
                 CORSMiddleware,
                 allow_origins=self.settings.CORS_ORIGINS,
                 allow_credentials=self.settings.CORS_ALLOW_CREDENTIALS,
@@ -78,20 +76,20 @@ class APIFactory:
                 allow_headers=self.settings.CORS_ALLOW_HEADERS,
             )
 
-    def _register_routers(self):
+    def _register_routers(self, app: FastAPI):
         routers = collect_routers()
         for router in routers:
-            self.app.include_router(
+            app.include_router(
                 router,
                 prefix=f"/{self.settings.API_VERSION}",
                 tags=[router.tags[0]] if router.tags else None,
             )
 
-    def _register_exception_handlers(self):
-        self.app.add_exception_handler(APIError, api_exception_handler)
-        self.app.add_exception_handler(HTTPException, http_exception_handler)
-        self.app.add_exception_handler(RequestValidationError, validation_exception_handler)
-        self.app.add_exception_handler(Exception, system_exception_handler)
+    def _register_exception_handlers(self, app: FastAPI):
+        app.add_exception_handler(APIError, api_exception_handler)  # type: ignore
+        app.add_exception_handler(HTTPException, http_exception_handler)  # type: ignore
+        app.add_exception_handler(RequestValidationError, validation_exception_handler)  # type: ignore
+        app.add_exception_handler(Exception, system_exception_handler)  # type: ignore
 
 
 app = APIFactory().create_app()

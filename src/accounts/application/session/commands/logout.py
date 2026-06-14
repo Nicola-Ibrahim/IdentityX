@@ -1,8 +1,8 @@
 from typing import override
 from pydantic import BaseModel
 
-from src.building_blocks.application.events.base_event_bus import BaseEventBus
-from src.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
+from src.shared.building_blocks.application.events.base_event_bus import BaseEventBus
+from src.shared.building_blocks.application.mediator import BaseCommand, BaseCommandHandler
 from src.accounts.domain.session.repositories.session_repository import BaseSessionRepository
 from src.accounts.domain.session.value_objects.refresh_token import RefreshToken
 from src.accounts.domain.session.services.token_service import TokenService
